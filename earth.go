@@ -45,8 +45,8 @@ func NewPoint(lat, lon float64) Point {
 	rLat := ToRad(lat)
 	rLon := ToRad(lon)
 	return Point{
-		lat: rLat,
-		lon: rLon,
+		lat: lat,
+		lon: lon,
 		vec: r3.Vec{
 			X: math.Cos(rLat) * math.Cos(rLon),
 			Y: math.Cos(rLat) * math.Sin(rLon),
