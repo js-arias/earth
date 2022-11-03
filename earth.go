@@ -6,6 +6,7 @@
 package earth
 
 import (
+	"fmt"
 	"math"
 
 	"gonum.org/v1/gonum/spatial/r3"
@@ -30,7 +31,17 @@ type Point struct {
 
 // NewPoint returns a geographic point
 // from a pair of geographic coordinates.
+// It panics if the coordinates are not valid.
 func NewPoint(lat, lon float64) Point {
+	if lat < -90 || lat > 90 {
+		msg := fmt.Sprintf("invalid latitude value: %.3f", lat)
+		panic(msg)
+	}
+	if lon < -180 || lon > 180 {
+		msg := fmt.Sprintf("invalid longitude value: %.3f", lon)
+		panic(msg)
+	}
+
 	rLat := ToRad(lat)
 	rLon := ToRad(lon)
 	return Point{
