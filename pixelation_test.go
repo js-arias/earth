@@ -21,8 +21,11 @@ func TestNewPixelation(t *testing.T) {
 	want := 4 * math.Pi * r * r
 
 	pix := earth.NewPixelation(eq)
-	got := float64(pix.Len())
+	if pix.Equator() != eq {
+		t.Errorf("got %d pixels at equator, want %d", pix.Equator(), eq)
+	}
 
+	got := float64(pix.Len())
 	diff := got - want
 	if diff < 0 {
 		diff = -diff
