@@ -74,6 +74,12 @@ func (p Point) Vector() r3.Vec {
 var NorthPole = NewPoint(90, 0)
 var SouthPole = NewPoint(-90, 0)
 
+// Chord2 returns the square of the Euclidean chord distance.
+func Chord2(p, q Point) float64 {
+	v := r3.Sub(p.vec, q.vec)
+	return r3.Norm2(v)
+}
+
 // Distance returns the great circle distance,
 // in radians,
 // between two geographic points.
