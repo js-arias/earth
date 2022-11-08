@@ -143,3 +143,20 @@ func ParsePolygon(points string) (Polygon, error) {
 
 	return poly, nil
 }
+
+// Bounds return the north and south coordinate
+// defined for a polygon.
+func (poly Polygon) bounds() (north, south float64) {
+	north = -90
+	south = 90
+
+	for _, p := range poly {
+		if p.Lat > north {
+			north = p.Lat
+		}
+		if p.Lat < south {
+			south = p.Lat
+		}
+	}
+	return north, south
+}

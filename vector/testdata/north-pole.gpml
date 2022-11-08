@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpml:FeatureCollection xmlns:gpml="http://www.gplates.org/gplates" xmlns:gml="http://www.opengis.net/gml" xmlns:xsi="http://www.w3.org/XMLSchema-instance" gpml:version="1.6.0336" xsi:schemaLocation="http://www.gplates.org/gplates ../xsd/gpml.xsd http://www.opengis.net/gml ../../../gml/current/base">
+    <gml:featureMember>
+        <gpml:TopologicalClosedPlateBoundary>
+            <gpml:identity>GPlates-21889547-bb11-4a0f-b5a4-5921e20b6719</gpml:identity>
+            <gpml:revision>GPlates-fa6dd46e-30ed-4a4f-9e93-f631bf57d991</gpml:revision>
+            <gpml:boundary>
+                <gpml:ConstantValue>
+                    <gpml:value>
+                        <gml:Polygon>
+                            <gml:exterior>
+                                <gml:LinearRing>
+                                    <gml:posList gml:dimension="2">89.292534863136893 180 89.256283179905694 180 89.124412143021161 143.26907572937805 89.224263223810638 150.00033430273169 89.179938743289171 139.9014953284744 89.146290321154297 132.49251912913783 89.091498216985983 120.46939203562506 89.052900091152964 111.69316631962369 89.015477270419382 102.54874854125109 88.985253640242817 94.278718921845794 88.978965745156657 92.397305204808674 88.970999822878454 89.901956291971388 88.959957415621417 86.179897967605001 88.953254782843928 83.724560321955465 88.931600282104611 73.972220175516128 88.925375642733258 68.183638401609713 88.451863287788115 43.752401351198763 88.452570991763707 46.683507994290537 88.348811889856449 39.330559171747133 87.300588058729531 2.4244377545157825 87.027464220733052 -1.6891541335284812 87.061911942215531 -5.8191558328112407 86.745490706232175 -9.5412392358285256 86.721223916915349 -9.7976559886932097 88.015785848295323 -56.197807078726953 88.500799482672136 -60.990114645475856 88.545949956112423 -66.32744761786644 88.606444495775733 -74.107806553322447 89.19386035312759 -101.05496155811178 89.212231384121196 -106.58224639834513 89.237925304179427 -116.98645510966327 89.4179610708957 -128.78405105302559 89.4179610708957 -128.78405105302559 89.486908714763018 -118.06001375441394 89.486908714763018 -118.06001375441394 89.472069231708943 -120.8989282986838 89.414983044892722 -134.24083890069519 89.393391466977889 -141.32362468516564 89.355166049177186 -172.58593300035278 89.347379068273355 -175.51026850793403 89.336492174877407 -179.34361235768341 89.334678606911197 -180 90 0 90 0 89.334678606911197 180 89.327970021779734 177.82707304171524 89.319201990400245 175.04721697292226 89.307108685448284 171.39704032457715 89.292534863136893 180 </gml:posList>
+                                </gml:LinearRing>
+                            </gml:exterior>
+                        </gml:Polygon>
+                    </gpml:value>
+                    <gml:description></gml:description>
+                    <gpml:valueType xmlns:gml="http://www.opengis.net/gml">gml:Polygon</gpml:valueType>
+                </gpml:ConstantValue>
+            </gpml:boundary>
+            <gpml:shapefileAttributes>
+                <gpml:KeyValueDictionary>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>ANCHOR</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:integer</gpml:valueType>
+                            <gpml:value>0</gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>TIME</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:double</gpml:valueType>
+                            <gpml:value>6</gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>PLATEID1</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:integer</gpml:valueType>
+                            <gpml:value>309</gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>FROMAGE</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:double</gpml:valueType>
+                            <gpml:value>11</gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>TOAGE</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:double</gpml:valueType>
+                            <gpml:value>2.0099999999999998</gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>NAME</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:string</gpml:valueType>
+                            <gpml:value></gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>DESCR</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:string</gpml:valueType>
+                            <gpml:value></gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>PLATEID2</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:integer</gpml:valueType>
+                            <gpml:value>0</gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>GPGIM_TYPE</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:string</gpml:valueType>
+                            <gpml:value>gpml:TopologicalClosedPlateBoundary</gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>FEATURE_ID</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:string</gpml:valueType>
+                            <gpml:value>GPlates-21889547-bb11-4a0f-b5a4-5921e20b6719</gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>RECON_METH</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:string</gpml:valueType>
+                            <gpml:value></gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>L_PLATE</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:integer</gpml:valueType>
+                            <gpml:value>0</gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>R_PLATE</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:integer</gpml:valueType>
+                            <gpml:value>0</gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>SPREAD_ASY</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:double</gpml:valueType>
+                            <gpml:value>0</gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>TYPE</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:string</gpml:valueType>
+                            <gpml:value></gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>START_ICS</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:double</gpml:valueType>
+                            <gpml:value>11.630000000000001</gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                    <gpml:element>
+                        <gpml:KeyValueDictionaryElement>
+                            <gpml:key>END_ICS</gpml:key>
+                            <gpml:valueType xmlns:xsi="http://www.w3.org/XMLSchema-instance">xsi:double</gpml:valueType>
+                            <gpml:value>1.8</gpml:value>
+                        </gpml:KeyValueDictionaryElement>
+                    </gpml:element>
+                </gpml:KeyValueDictionary>
+            </gpml:shapefileAttributes>
+            <gpml:reconstructionPlateId>
+                <gpml:ConstantValue>
+                    <gpml:value>309</gpml:value>
+                    <gml:description></gml:description>
+                    <gpml:valueType xmlns:gpml="http://www.gplates.org/gplates">gpml:plateId</gpml:valueType>
+                </gpml:ConstantValue>
+            </gpml:reconstructionPlateId>
+            <gml:validTime>
+                <gml:TimePeriod>
+                    <gml:begin>
+                        <gml:TimeInstant>
+                            <gml:timePosition gml:frame="http://gplates.org/TRS/flat">11</gml:timePosition>
+                        </gml:TimeInstant>
+                    </gml:begin>
+                    <gml:end>
+                        <gml:TimeInstant>
+                            <gml:timePosition gml:frame="http://gplates.org/TRS/flat">2.0099999999999998</gml:timePosition>
+                        </gml:TimeInstant>
+                    </gml:end>
+                </gml:TimePeriod>
+            </gml:validTime>
+            <gml:name></gml:name>
+            <gml:description></gml:description>
+            <gpml:conjugatePlateId>0</gpml:conjugatePlateId>
+            <gpml:spreadingAsymmetry>0</gpml:spreadingAsymmetry>
+            <gpml:leftPlate>0</gpml:leftPlate>
+            <gpml:rightPlate>0</gpml:rightPlate>
+        </gpml:TopologicalClosedPlateBoundary>
+    </gml:featureMember>
+</gpml:FeatureCollection>
