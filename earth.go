@@ -12,10 +12,15 @@ import (
 	"gonum.org/v1/gonum/spatial/r3"
 )
 
-// Arithmetic mean radius of Earth in meters
-// after Moritz (1980) Geodetic Reference System 1980
-// Resolution 1 at the XVII General Assembly of the IUGG.
-const Radius = 6_371_008
+const (
+	// Arithmetic mean radius of Earth in meters
+	// after Moritz (1980) Geodetic Reference System 1980
+	// Resolution 1 at the XVII General Assembly of the IUGG.
+	Radius = 6_371_008
+
+	// Age of Earth in years.
+	Age = 4_540_000_000
+)
 
 // ToDegree transform a radian angle into degrees.
 func ToDegree(angle float64) float64 {
