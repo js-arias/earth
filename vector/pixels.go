@@ -47,7 +47,7 @@ func (r *raster) pixSet() []int {
 }
 
 func (r *raster) doRaster(poly Polygon) {
-	cols := r.pix.Equator() * 5
+	cols := r.pix.Equator() * 10
 
 	north, south := poly.bounds()
 	img := &azimuthal{
@@ -71,8 +71,30 @@ func (r *raster) doRaster(poly Polygon) {
 	src := &filled{cols}
 	ras.Draw(img, img.Bounds(), src, image.Pt(0, 0))
 
+	for pos, v := range img.pixels {
+		if !v {
+			continue
+		}
+		lat, lon := img.latLon(pos)
+		px := r.pix.Pixel(lat, lon).ID()
+		r.pixels[px] = true
+		if lat > north {
+			north = lat
+		}
+		if lat < south {
+			south = lat
+		}
+	}
+
 	for px := 0; px < r.pix.Len(); px++ {
 		pt := r.pix.ID(px).Point()
+		if pt.Latitude() > north {
+			continue
+		}
+		if pt.Latitude() < south {
+			continue
+		}
+
 		x, y := img.xy(pt.Latitude(), pt.Longitude())
 		pos := int(x)*img.cols + int(y)
 		if img.pixels[pos] {
@@ -143,6 +165,28 @@ func (a *azimuthal) xy(lat, lon float64) (x, y float64) {
 	y = -rho * math.Cos(theta)
 
 	return x + a.center, y + a.center
+}
+
+func (a *azimuthal) latLon(pos int) (lat, lon float64) {
+	x := float64(pos/a.cols) + 0.5 - a.center
+	y := float64(pos%a.cols) + 0.5 - a.center
+
+	rho := math.Hypot(x, y)
+	nLat := earth.ToDegree(rho / a.radius)
+	lat = 90 - nLat
+	if !a.hemisphere {
+		lat = nLat - 90
+	}
+	theta := math.Asin(x / rho)
+	lon = earth.ToDegree(theta)
+	if y > 0 {
+		if lon > 0 {
+			lon = 180 - lon
+		} else {
+			lon = -180 - lon
+		}
+	}
+	return lat, lon
 }
 
 type filled struct {
