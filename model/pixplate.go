@@ -5,8 +5,15 @@
 package model
 
 import (
+	"bufio"
+	"encoding/csv"
+	"errors"
 	"fmt"
+	"io"
+	"strconv"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/js-arias/earth"
 	"golang.org/x/exp/slices"
@@ -200,4 +207,197 @@ func (pp *pixPlate) add(id int, name string, begin, end int64) {
 			px.Name = name
 		}
 	}
+}
+
+var pixHead = []string{
+	"equator",
+	"plate",
+	"pixel",
+	"begin",
+	"end",
+}
+
+// ReadPixPlate reads a tectonic plates pixelation
+// from a TSV file.
+//
+// The TSV file must have the following columns:
+//
+//   - equator, for the number of pixels at the equator
+//   - plate, the ID of a tectonic plate
+//   - pixel, the ID of a pixel (from a pixelation)
+//   - begin, the oldest age of the pixel (in years)
+//   - end, the youngest age of the pixel (in years)
+//
+// Optionally,
+// it can include the following fields:
+//
+//   - name, name of the tectonic feature
+//
+// Here is an example file:
+//
+//	# tectonic plates pixelation
+//	equator	plate	pixel	name	begin	end
+//	360	202	29611	Parana	600000000	0
+//	360	802	41257	Antarctica	600000000	0
+//
+// If no pixelation is given,
+// a new pixelation will be created.
+func ReadPixPlate(r io.Reader, pix *earth.Pixelation) (*PixPlate, error) {
+	tab := csv.NewReader(r)
+	tab.Comma = '\t'
+	tab.Comment = '#'
+
+	head, err := tab.Read()
+	if err != nil {
+		return nil, fmt.Errorf("while reading header: %v", err)
+	}
+	fields := make(map[string]int, len(head))
+	for i, h := range head {
+		h = strings.ToLower(h)
+		fields[h] = i
+	}
+	for _, h := range pixHead {
+		if _, ok := fields[h]; !ok {
+			return nil, fmt.Errorf("expecting field %q", h)
+		}
+	}
+
+	var pp *PixPlate
+	for {
+		row, err := tab.Read()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		ln, _ := tab.FieldPos(0)
+		if err != nil {
+			return nil, fmt.Errorf("on row %d: %v", ln, err)
+		}
+
+		f := "equator"
+		eq, err := strconv.Atoi(row[fields[f]])
+		if err != nil {
+			return nil, fmt.Errorf("on row %d: field %q: %v", ln, f, err)
+		}
+		if pix == nil {
+			pix = earth.NewPixelation(eq)
+		}
+		if pix.Equator() != eq {
+			return nil, fmt.Errorf("on row %d: field %q: got %d, want %d", ln, f, eq, pix.Equator())
+		}
+		if pp == nil {
+			pp = NewPixPlate(pix)
+		}
+
+		f = "plate"
+		plate, err := strconv.Atoi(row[fields[f]])
+		if err != nil {
+			return nil, fmt.Errorf("on row %d: field %q: %v", ln, f, err)
+		}
+		p := pp.pixPlate(plate)
+
+		f = "pixel"
+		id, err := strconv.Atoi(row[fields[f]])
+		if err != nil {
+			return nil, fmt.Errorf("on row %d: field %q: %v", ln, f, err)
+		}
+		if id >= pix.Len() {
+			return nil, fmt.Errorf("on row %d: field %q: invalid pixel value %d", ln, f, id)
+		}
+
+		f = "begin"
+		begin, err := strconv.ParseInt(row[fields[f]], 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("on row %d: field %q: %v", ln, f, err)
+		}
+		f = "end"
+		end, err := strconv.ParseInt(row[fields[f]], 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("on row %d: field %q: %v", ln, f, err)
+		}
+		if end > begin {
+			return nil, fmt.Errorf("on row %d: field %q: end value must be less than %d", ln, f, begin)
+		}
+
+		name := ""
+		f = "name"
+		if _, ok := fields[f]; ok {
+			name = row[fields[f]]
+		}
+
+		p.add(id, name, begin, end)
+	}
+	if pp == nil {
+		return nil, fmt.Errorf("while reading data: %v", io.EOF)
+	}
+	return pp, nil
+}
+
+// TSV encodes a plate pixelation
+// into a TSV file.
+func (pp *PixPlate) TSV(w io.Writer) error {
+	bw := bufio.NewWriter(w)
+	fmt.Fprintf(bw, "# tectonic plates pixelation\n")
+	fmt.Fprintf(bw, "# data save on: %s\n", time.Now().Format(time.RFC3339))
+
+	tab := csv.NewWriter(bw)
+	tab.Comma = '\t'
+	tab.UseCRLF = true
+
+	header := []string{
+		"equator",
+		"plate",
+		"pixel",
+		"name",
+		"begin",
+		"end",
+	}
+	if err := tab.Write(header); err != nil {
+		return fmt.Errorf("while writing header: %v", err)
+	}
+
+	eq := strconv.Itoa(pp.pix.Equator())
+
+	pp.mu.Lock()
+	defer pp.mu.Unlock()
+
+	plates := make([]int, 0, len(pp.plates))
+	for _, p := range pp.plates {
+		plates = append(plates, p.plate)
+	}
+	slices.Sort(plates)
+
+	for _, plate := range plates {
+		p := pp.plates[plate]
+		pxs := make([]int, 0, len(p.pix))
+		for _, px := range p.pix {
+			pxs = append(pxs, px.ID)
+		}
+		slices.Sort(pxs)
+
+		pID := strconv.Itoa(plate)
+
+		for _, id := range pxs {
+			px := p.pix[id]
+			row := []string{
+				eq,
+				pID,
+				strconv.Itoa(id),
+				px.Name,
+				strconv.FormatInt(px.Begin, 10),
+				strconv.FormatInt(px.End, 10),
+			}
+			if err := tab.Write(row); err != nil {
+				return fmt.Errorf("while writing data: %v", err)
+			}
+		}
+	}
+
+	tab.Flush()
+	if err := tab.Error(); err != nil {
+		return fmt.Errorf("while writing data: %v", err)
+	}
+	if err := bw.Flush(); err != nil {
+		return fmt.Errorf("while writing data: %v", err)
+	}
+	return nil
 }

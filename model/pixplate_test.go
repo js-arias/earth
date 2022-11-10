@@ -5,7 +5,9 @@
 package model_test
 
 import (
+	"bytes"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/js-arias/earth"
@@ -14,6 +16,22 @@ import (
 
 func TestNewPixPlate(t *testing.T) {
 	pp := makePixPlate(t)
+	testPixPlate(t, pp)
+}
+
+func TestReadPixPlate(t *testing.T) {
+	data := makePixPlate(t)
+
+	var buf bytes.Buffer
+	if err := data.TSV(&buf); err != nil {
+		t.Fatalf("while writing data: %v", err)
+	}
+
+	pp, err := model.ReadPixPlate(strings.NewReader(buf.String()), nil)
+	if err != nil {
+		t.Fatalf("while reading data: %v", err)
+	}
+
 	testPixPlate(t, pp)
 }
 
