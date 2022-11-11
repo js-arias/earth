@@ -9,6 +9,7 @@ package pixels
 import (
 	"github.com/js-arias/command"
 	"github.com/js-arias/earth/cmd/plates/pixels/importcmd"
+	"github.com/js-arias/earth/cmd/plates/pixels/list"
 	"github.com/js-arias/earth/cmd/plates/pixels/mapcmd"
 )
 
@@ -19,5 +20,6 @@ var Command = &command.Command{
 
 func init() {
 	Command.Add(importcmd.Command)
+	Command.Add(list.Command)
 	Command.Add(mapcmd.Command)
 }
