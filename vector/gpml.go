@@ -95,6 +95,7 @@ type collection struct {
 	XMLName xml.Name `xml:"FeatureCollection"`
 
 	// Features
+	Basin         []feature `xml:"featureMember>Basin"`
 	Boundary      []feature `xml:"featureMember>TopologicalClosedPlateBoundary"`
 	Coastline     []feature `xml:"featureMember>Coastline"`
 	Continent     []feature `xml:"featureMember>ClosedContinentalBoundary"`
@@ -112,6 +113,10 @@ type collection struct {
 
 func (c collection) features() []feature {
 	var f []feature
+	for _, v := range c.Basin {
+		v.tp = Basin
+		f = append(f, v)
+	}
 	for _, v := range c.Boundary {
 		v.tp = Boundary
 		f = append(f, v)

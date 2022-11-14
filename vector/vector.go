@@ -20,6 +20,7 @@ type Type string
 // of the GPML format
 // (<https://www.gplates.org/docs/gpgim/>).
 const (
+	Basin     Type = "basin"
 	Boundary  Type = "plate boundary"
 	Coastline Type = "coastline"
 

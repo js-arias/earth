@@ -16,6 +16,30 @@ import (
 func TestDecodeGPML(t *testing.T) {
 	want := []vector.Feature{
 		{
+			Name:  "Pacific",
+			Type:  vector.Basin,
+			Plate: 901,
+			Begin: 400_000,
+			Polygon: vector.Polygon{
+				{Lat: 19.85355599999994, Lon: -155.08441699999997},
+				{Lat: 19.729971999999975, Lon: -155.087806},
+				{Lat: 19.738222000000007, Lon: -155.00502799999998},
+				{Lat: 19.519139000000024, Lon: -154.80575},
+				{Lat: 19.346417000000088, Lon: -154.97772200000003},
+				{Lat: 19.136611000000016, Lon: -155.50566700000002},
+				{Lat: 18.913056000000097, Lon: -155.67533299999997},
+				{Lat: 18.998167000000024, Lon: -155.78688900000003},
+				{Lat: 19.085082999999997, Lon: -155.91097199999996},
+				{Lat: 19.346499999999935, Lon: -155.88933300000002},
+				{Lat: 19.72963900000005, Lon: -156.06461099999996},
+				{Lat: 19.98366699999994, Lon: -155.83116699999994},
+				{Lat: 20.197389000000015, Lon: -155.90624999999997},
+				{Lat: 20.27277799999996, Lon: -155.853389},
+				{Lat: 19.975000000000023, Lon: -155.210139},
+				{Lat: 19.85355599999994, Lon: -155.08441699999997},
+			},
+		},
+		{
 			Type:  vector.Boundary,
 			Plate: 802,
 			Begin: 11_000_000,
@@ -188,7 +212,12 @@ func TestDecodeGPML(t *testing.T) {
 	if err != nil {
 		t.Fatalf("while reading \"plates.gpml\": %v", err)
 	}
-	if !reflect.DeepEqual(coll, want) {
-		t.Errorf("invalid decoded data: got %v, want %v", coll, want)
+	if len(coll) != len(want) {
+		t.Errorf("invalid decoded data: got %d elements, want %d", len(coll), len(want))
+	}
+	for i, c := range coll {
+		if !reflect.DeepEqual(c, want[i]) {
+			t.Errorf("invalid decoded data: element %d\n\tgot %v\t\nwant %v", i, c, want[i])
+		}
 	}
 }

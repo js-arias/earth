@@ -179,6 +179,10 @@ func TestPixels(t *testing.T) {
 				41018, 41019, 41020, 41021,
 			},
 		},
+		"basin": {
+			in:   "basin.gpml",
+			want: []int{13429, 13430, 13766, 13767},
+		},
 	}
 
 	pix := earth.NewPixelation(360)
