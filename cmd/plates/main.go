@@ -8,6 +8,7 @@ package main
 import (
 	"github.com/js-arias/command"
 	"github.com/js-arias/earth/cmd/plates/pixels"
+	"github.com/js-arias/earth/cmd/plates/rotate"
 )
 
 var app = &command.Command{
@@ -17,6 +18,7 @@ var app = &command.Command{
 
 func init() {
 	app.Add(pixels.Command)
+	app.Add(rotate.Command)
 }
 
 func main() {
