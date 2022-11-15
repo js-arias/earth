@@ -3,7 +3,7 @@
 // Distributed under BSD2 license that can be found in the LICENSE file.
 
 // Package mapcmd implements a command to draw
-// a paleogeographic reconstruction model as an image map.
+// a tectonic reconstruction model as an image map.
 package mapcmd
 
 import (
@@ -22,14 +22,14 @@ import (
 var Command = &command.Command{
 	Usage: `map [-c|--columns <value>] [--at <age>]
 	-o|--output <out-image-file> <model-file>`,
-	Short: "draw a map from a paleogeographic reconstruction model",
+	Short: "draw a map from a tectonic reconstruction model",
 	Long: `
-Command map reads a paleogeographic reconstruction model and draw the
+Command map reads a tectonic reconstruction model and draw the
 reconstruction at the indicated time stage as a png image, using a plate
 carrée projection.
 
-The argument of the command is the name of the file that contains the
-paleogeographic reconstruction model.
+The argument of the command is the name of the file that contains the tectonic
+reconstruction model.
 
 The flag --output, or -o, is required and sets the name of the output image. If
 multiple stages are used, the time stage will append to the name of the image.
@@ -63,7 +63,7 @@ const millionYears = 1_000_000
 
 func run(c *command.Command, args []string) error {
 	if len(args) == 0 {
-		return c.UsageError("expecting paleogeographic model file")
+		return c.UsageError("expecting tectonic reconstruction model file")
 	}
 	if output == "" {
 		return c.UsageError("undefined output image flag --output")

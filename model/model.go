@@ -29,7 +29,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// A Recons is an editable paleogeographic reconstruction model
+// A Recons is an editable tectonic reconstruction model
 // based on an isolatitude pixelation
 // and using discrete time stages.
 //
@@ -228,7 +228,7 @@ var recHeader = []string{
 	"stage-pixel",
 }
 
-// ReadReconsTSV reads a paleogeographic reconstruction model
+// ReadReconsTSV reads a tectonic reconstruction model
 // from a TSV file.
 //
 // The TSV file must contains the following columns:
@@ -359,11 +359,11 @@ func ReadReconsTSV(r io.Reader, pix *earth.Pixelation) (*Recons, error) {
 	return rec, nil
 }
 
-// TSV encodes a paleogeographic reconstruction model
+// TSV encodes a tectonic reconstruction model
 // as a TSV file.
 func (rec *Recons) TSV(w io.Writer) error {
 	bw := bufio.NewWriter(w)
-	fmt.Fprintf(bw, "# paleogeographic reconstruction model\n")
+	fmt.Fprintf(bw, "# tectonic reconstruction model\n")
 	fmt.Fprintf(bw, "# data save on: %s\n", time.Now().Format(time.RFC3339))
 	tab := csv.NewWriter(bw)
 	tab.Comma = '\t'

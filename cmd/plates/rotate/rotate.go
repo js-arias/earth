@@ -4,7 +4,7 @@
 
 // Package rotate implements a command to add new pixel rotations
 // (i.e. pixel locations in the past)
-// to a paleogeographic reconstruction model.
+// to a tectonic reconstruction model.
 package rotate
 
 import (
@@ -24,16 +24,16 @@ var Command = &command.Command{
 	Usage: `rotate [--from <age>] [--to <age>] [--step <age>]
 	--pix <pix-file> --rot <rotation-file>
 	<model-file> [<age>...]`,
-	Short: "rotate pixels of a tectonic plate reconstruction model",
+	Short: "rotate pixels of a tectonic reconstruction model",
 	Long: `
 Command rotate reads a rotation file and updates the pixel locations of the
-pixels from a pixelated plate file, and write them into a paleogeographic
+pixels from a pixelated plate file, and write them into a tectonic
 reconstruction model.
 
 The flag --pix is required and sets the file with pixelated plates. The
 resolution (i.e. the number of pixels in the equator) of the pixelation must
-be equal to the paleogeographic reconstruction model (if the model already
-exists). It will add any plate or pixel absent in the model.
+be equal to the tectonic reconstruction model (if the model already exists). It
+will add any plate or pixel absent in the model.
 
 The flag --rot is required and indicates the file containing a rotation model.
 Rotation model files are the standard files for rotations used in tectonic
@@ -75,7 +75,7 @@ const millionYears = 1_000_000
 
 func run(c *command.Command, args []string) error {
 	if len(args) < 1 {
-		return c.UsageError("expecting paleogeographic model file")
+		return c.UsageError("expecting tectonic reconstruction model file")
 	}
 	if pixFile == "" {
 		return c.UsageError("undefined value for --pix flag")
