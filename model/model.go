@@ -106,6 +106,12 @@ func (rec *Recons) Add(plate int, locations map[int][]int, age int64) {
 	}
 }
 
+// Pixelation returns the underlying isolatitude pixelation
+// of the model.
+func (rec *Recons) Pixelation() *earth.Pixelation {
+	return rec.pix
+}
+
 // Pixels returns the pixel IDs of a plate
 // at present time.
 func (rec *Recons) Pixels(plate int) []int {

@@ -37,6 +37,10 @@ func TestReconsIO(t *testing.T) {
 func testRecons(t testing.TB, rec *model.Recons) {
 	t.Helper()
 
+	if eq := rec.Pixelation().Equator(); eq != 360 {
+		t.Errorf("pixelation: got %d pixels, want %d", eq, 360)
+	}
+
 	plates := []int{59_999}
 	if p := rec.Plates(); !reflect.DeepEqual(p, plates) {
 		t.Errorf("plates: got %v, want %v", p, plates)
