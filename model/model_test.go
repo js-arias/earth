@@ -5,7 +5,9 @@
 package model_test
 
 import (
+	"bytes"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/js-arias/earth"
@@ -14,6 +16,21 @@ import (
 
 func TestNewRecon(t *testing.T) {
 	r := makeRecons(t)
+	testRecons(t, r)
+}
+
+func TestReconsIO(t *testing.T) {
+	data := makeRecons(t)
+
+	var buf bytes.Buffer
+	if err := data.TSV(&buf); err != nil {
+		t.Fatalf("while writing data: %v", err)
+	}
+
+	r, err := model.ReadReconsTSV(strings.NewReader(buf.String()), nil)
+	if err != nil {
+		t.Fatalf("while reading data: %v", err)
+	}
 	testRecons(t, r)
 }
 
