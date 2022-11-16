@@ -37,27 +37,25 @@ func run(c *command.Command, args []string) error {
 		return c.UsageError("expecting tectonic reconstruction model file")
 	}
 
-	m, err := readModel(args[0])
+	st, err := readStages(args[0])
 	if err != nil {
 		return err
 	}
-
-	st := m.Stages()
 	for _, a := range st {
 		fmt.Fprintf(c.Stdout(), "%.6f\n", float64(a)/millionYears)
 	}
 	return nil
 }
 
-func readModel(name string) (*model.Recons, error) {
+func readStages(name string) ([]int64, error) {
 	f, err := os.Open(name)
 	if err != nil {
 		return nil, err
 	}
 
-	rec, err := model.ReadReconsTSV(f, nil)
+	tot, err := model.ReadTotal(f, nil)
 	if err != nil {
 		return nil, fmt.Errorf("when reading file %q: %v", name, err)
 	}
-	return rec, nil
+	return tot.Stages(), nil
 }
