@@ -20,6 +20,8 @@ import (
 // for pixels at present time
 // moved to a given time stage.
 type Total struct {
+	inverse bool
+
 	pix *earth.Pixelation
 
 	// Reconstructed stages
@@ -178,6 +180,49 @@ func (t *Total) ClosesStageAge(age int64) int64 {
 	return age
 }
 
+// Inverse returns an inverse total rotation,
+// a collection of pixels in past time
+// moved to current time.
+func (t *Total) Inverse() *Total {
+	st := t.Stages()
+
+	inv := &Total{
+		inverse: true,
+		pix:     t.pix,
+		stages:  make(map[int64]*rotation),
+	}
+
+	for _, a := range st {
+		rot := &rotation{
+			from: a,
+			to:   0,
+			rot:  make(map[int][]int),
+		}
+		tot := t.Rotation(a)
+		for id, v := range tot {
+			for _, px := range v {
+				rot.rot[px] = append(rot.rot[px], id)
+			}
+		}
+		inv.stages[a] = rot
+	}
+
+	// Remove duplicated pixels
+	// if any
+	for _, rot := range inv.stages {
+		rot.removeDuplicates()
+	}
+
+	return inv
+}
+
+// IsInverse returns true in the total rotation
+// is inverse
+// i.e. is from past pixels to present pixels.
+func (t *Total) IsInverse() bool {
+	return t.inverse
+}
+
 // Pixelation returns the underlying pixelation
 // of a total rotation model.
 func (t *Total) Pixelation() *earth.Pixelation {
@@ -208,6 +253,10 @@ func (t *Total) Rotation(age int64) map[int][]int {
 func (t *Total) Stages() []int64 {
 	st := make([]int64, 0, len(t.stages))
 	for _, rot := range t.stages {
+		if t.inverse {
+			st = append(st, rot.from)
+			continue
+		}
 		st = append(st, rot.to)
 	}
 	slices.Sort(st)

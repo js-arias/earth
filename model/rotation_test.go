@@ -28,10 +28,15 @@ func TestReadTotal(t *testing.T) {
 	}
 
 	testTotal(t, tot)
+	testInverse(t, tot.Inverse())
 }
 
 func testTotal(t testing.TB, tot *model.Total) {
 	t.Helper()
+
+	if tot.IsInverse() {
+		t.Error("an inverse rotation")
+	}
 
 	if eq := tot.Pixelation().Equator(); eq != 360 {
 		t.Errorf("pixelation: got %v pixels at equator, want %d", eq, 360)
@@ -57,6 +62,57 @@ func testTotal(t testing.TB, tot *model.Total) {
 		17766: {20766},
 		18122: {21122},
 		18479: {21479},
+	}
+
+	if l := tot.Rotation(100_000_000); !reflect.DeepEqual(l, pix100) {
+		t.Errorf("pixels at stage 100: got %v, want %v", l, pix100)
+	}
+	if l := tot.Rotation(140_000_000); !reflect.DeepEqual(l, pix140) {
+		t.Errorf("pixels at stage 100: got %v, want %v", l, pix140)
+	}
+
+	// Ages given to the model might not be exact
+	if l := tot.Rotation(110_000_000); !reflect.DeepEqual(l, pix100) {
+		t.Errorf("pixels at stage 100: got %v, want %v", l, pix100)
+	}
+	if l := tot.Rotation(150_000_000); !reflect.DeepEqual(l, pix140) {
+		t.Errorf("pixels at stage 100: got %v, want %v", l, pix140)
+	}
+}
+
+func testInverse(t testing.TB, tot *model.Total) {
+	t.Helper()
+
+	if !tot.IsInverse() {
+		t.Error("not an inverse total rotation")
+	}
+
+	if eq := tot.Pixelation().Equator(); eq != 360 {
+		t.Errorf("pixelation: got %v pixels at equator, want %d", eq, 360)
+	}
+
+	stages := []int64{100_000_000, 140_000_000}
+	if st := tot.Stages(); !reflect.DeepEqual(st, stages) {
+		t.Errorf("stages: got %v, want %v", st, stages)
+	}
+
+	pix100 := map[int][]int{
+		19051: {17051},
+		19055: {17055},
+		19409: {17409},
+		19766: {17766},
+		20122: {18122},
+		20479: {18479},
+		20480: {18479},
+	}
+	pix140 := map[int][]int{
+		20051: {17051},
+		20055: {17055},
+		20056: {17055},
+		20409: {17409},
+		20766: {17766},
+		21122: {18122},
+		21479: {18479},
 	}
 
 	if l := tot.Rotation(100_000_000); !reflect.DeepEqual(l, pix100) {
