@@ -71,7 +71,13 @@ func NewTotal(rec *Recons) *Total {
 //
 // If no pixelation is given
 // a new pixelation will be created.
-func ReadTotal(r io.Reader, pix *earth.Pixelation) (*Total, error) {
+//
+// If inverse is true,
+// an inverse rotation will be returned.
+// In an inverse rotation,
+// the reference pixel are at the given time stage
+// an rotate it to their present locations.
+func ReadTotal(r io.Reader, pix *earth.Pixelation, inverse bool) (*Total, error) {
 	tab := csv.NewReader(r)
 	tab.Comma = '\t'
 	tab.Comment = '#'
@@ -115,8 +121,9 @@ func ReadTotal(r io.Reader, pix *earth.Pixelation) (*Total, error) {
 		}
 		if tot == nil {
 			tot = &Total{
-				pix:    pix,
-				stages: make(map[int64]*rotation),
+				pix:     pix,
+				stages:  make(map[int64]*rotation),
+				inverse: inverse,
 			}
 		}
 
@@ -132,6 +139,10 @@ func ReadTotal(r io.Reader, pix *earth.Pixelation) (*Total, error) {
 				from: 0,
 				to:   age,
 				rot:  make(map[int][]int),
+			}
+			if inverse {
+				rot.from = age
+				rot.to = 0
 			}
 			tot.stages[age] = rot
 		}
@@ -152,7 +163,11 @@ func ReadTotal(r io.Reader, pix *earth.Pixelation) (*Total, error) {
 		if sID >= pix.Len() {
 			return nil, fmt.Errorf("on row %d: field %q: invalid pixel value %d", ln, f, sID)
 		}
-		rot.rot[id] = append(rot.rot[id], sID)
+		if inverse {
+			rot.rot[sID] = append(rot.rot[sID], id)
+		} else {
+			rot.rot[id] = append(rot.rot[id], sID)
+		}
 	}
 	if tot == nil {
 		return nil, fmt.Errorf("while reading data: %v", io.EOF)

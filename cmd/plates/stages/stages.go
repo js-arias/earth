@@ -53,7 +53,7 @@ func readStages(name string) ([]int64, error) {
 		return nil, err
 	}
 
-	tot, err := model.ReadTotal(f, nil)
+	tot, err := model.ReadTotal(f, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("when reading file %q: %v", name, err)
 	}

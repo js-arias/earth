@@ -22,13 +22,19 @@ func TestReadTotal(t *testing.T) {
 		t.Fatalf("while writing data: %v", err)
 	}
 
-	tot, err := model.ReadTotal(strings.NewReader(buf.String()), nil)
+	tot, err := model.ReadTotal(strings.NewReader(buf.String()), nil, false)
 	if err != nil {
 		t.Fatalf("while reading data: %v", err)
 	}
 
 	testTotal(t, tot)
 	testInverse(t, tot.Inverse())
+
+	inv, err := model.ReadTotal(strings.NewReader(buf.String()), nil, true)
+	if err != nil {
+		t.Fatalf("while reading data (inverse): %v", err)
+	}
+	testInverse(t, inv)
 }
 
 func testTotal(t testing.TB, tot *model.Total) {
