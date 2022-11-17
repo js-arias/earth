@@ -5,7 +5,9 @@
 package model_test
 
 import (
+	"bytes"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/js-arias/earth/model"
@@ -20,6 +22,18 @@ func TestTimePix(t *testing.T) {
 	setStage(tp, tot, 140_000_000)
 
 	testTimePix(t, tp)
+
+	var buf bytes.Buffer
+	if err := tp.TSV(&buf); err != nil {
+		t.Fatalf("while writing data: %v", err)
+	}
+
+	np, err := model.ReadTimePix(strings.NewReader(buf.String()), nil)
+	if err != nil {
+		t.Fatalf("while reading data: %v", err)
+	}
+
+	testTimePix(t, np)
 }
 
 func setStage(tp *model.TimePix, tot *model.Total, age int64) {

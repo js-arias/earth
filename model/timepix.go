@@ -5,7 +5,14 @@
 package model
 
 import (
+	"bufio"
+	"encoding/csv"
+	"errors"
 	"fmt"
+	"io"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/js-arias/earth"
 	"golang.org/x/exp/slices"
@@ -121,4 +128,163 @@ type timePix struct {
 	// Value is a map of a pixel ID in the pixelation
 	// to an integer value.
 	values map[int]int
+}
+
+var tpHeader = []string{
+	"equator",
+	"age",
+	"stage-pixel",
+	"value",
+}
+
+// ReadTimePix reads values of a time pixelation
+// from a TSV file.
+//
+// The TSV must contain the following columns:
+//
+//   - equator, for the number of pixels at the equator
+//   - age, the age of the time stage (in years)
+//   - stage-pixel, the pixel ID at the time stage
+//   - value, an integer value
+//
+// Here is an example file:
+//
+//	equator	age	stage-pixel	value
+//	360	100000000	19051	1
+//	360	100000000	19055	2
+//	360	100000000	19409	1
+//	360	140000000	20051	1
+//	360	140000000	20055	2
+//	360	140000000	20056	3
+//
+// If no pixelation is given,
+// a new pixelation will be created.
+func ReadTimePix(r io.Reader, pix *earth.Pixelation) (*TimePix, error) {
+	tab := csv.NewReader(r)
+	tab.Comma = '\t'
+	tab.Comment = '#'
+
+	head, err := tab.Read()
+	if err != nil {
+		return nil, fmt.Errorf("while reading header: %v", err)
+	}
+	fields := make(map[string]int, len(head))
+	for i, h := range head {
+		h = strings.ToLower(h)
+		fields[h] = i
+	}
+	for _, h := range tpHeader {
+		if _, ok := fields[h]; !ok {
+			return nil, fmt.Errorf("expecting field %q", h)
+		}
+	}
+
+	var tp *TimePix
+	for {
+		row, err := tab.Read()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		ln, _ := tab.FieldPos(0)
+		if err != nil {
+			return nil, fmt.Errorf("on row %d: %v", ln, err)
+		}
+
+		f := "equator"
+		eq, err := strconv.Atoi(row[fields[f]])
+		if err != nil {
+			return nil, fmt.Errorf("on row %d: field %q: %v", ln, f, err)
+		}
+		if pix == nil {
+			pix = earth.NewPixelation(eq)
+		}
+		if tp == nil {
+			tp = NewTimePix(pix)
+		}
+
+		f = "age"
+		age, err := strconv.ParseInt(row[fields[f]], 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("on row %d: field %q: %v", ln, f, err)
+		}
+		st := tp.stages[age]
+		if st == nil {
+			st = &timePix{
+				age:    age,
+				values: make(map[int]int),
+			}
+			tp.stages[age] = st
+		}
+
+		f = "stage-pixel"
+		px, err := strconv.Atoi(row[fields[f]])
+		if err != nil {
+			return nil, fmt.Errorf("on row %d: field %q: %v", ln, f, err)
+		}
+		if px >= pix.Len() {
+			return nil, fmt.Errorf("on row %d: field %q: invalid pixel value %d", ln, f, px)
+		}
+
+		f = "value"
+		v, err := strconv.Atoi(row[fields[f]])
+		if err != nil {
+			return nil, fmt.Errorf("on row %d: field %q: %v", ln, f, err)
+		}
+		st.values[px] = v
+	}
+
+	if tp == nil {
+		return nil, fmt.Errorf("while reading data: %v", io.EOF)
+	}
+	return tp, nil
+}
+
+// TSV encodes a time pixelation
+// as a TSV file.
+func (tp *TimePix) TSV(w io.Writer) error {
+	bw := bufio.NewWriter(w)
+	fmt.Fprintf(bw, "# time pixelation values\n")
+	fmt.Fprintf(bw, "# data save on: %s\n", time.Now().Format(time.RFC3339))
+	tab := csv.NewWriter(bw)
+	tab.Comma = '\t'
+	tab.UseCRLF = true
+
+	if err := tab.Write(tpHeader); err != nil {
+		return fmt.Errorf("while writing header: %v", err)
+	}
+
+	eq := strconv.Itoa(tp.pix.Equator())
+
+	ages := tp.Stages()
+	for _, a := range ages {
+		age := strconv.FormatInt(a, 10)
+		st := tp.stages[a]
+
+		pxs := make([]int, 0, len(st.values))
+		for id := range st.values {
+			pxs = append(pxs, id)
+		}
+		slices.Sort(pxs)
+
+		for _, id := range pxs {
+			row := []string{
+				eq,
+				age,
+				strconv.Itoa(id),
+				strconv.Itoa(st.values[id]),
+			}
+			if err := tab.Write(row); err != nil {
+				return fmt.Errorf("while writing data: %v", err)
+			}
+		}
+	}
+
+	tab.Flush()
+	if err := tab.Error(); err != nil {
+		return fmt.Errorf("while writing data: %v", err)
+	}
+	if err := bw.Flush(); err != nil {
+		return fmt.Errorf("while writing data: %v", err)
+	}
+	return nil
 }
