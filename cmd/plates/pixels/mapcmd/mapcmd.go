@@ -12,12 +12,13 @@ import (
 	"image/color"
 	"image/png"
 	"io"
+	"math/rand"
 	"os"
+	"time"
 
 	"github.com/js-arias/command"
 	"github.com/js-arias/earth"
 	"github.com/js-arias/earth/model"
-	"pgregory.net/rand"
 )
 
 var Command = &command.Command{
@@ -93,6 +94,10 @@ func run(c *command.Command, args []string) error {
 		return err
 	}
 	return nil
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }
 
 func readPixPlate(r io.Reader, name string, pix *earth.Pixelation) (*model.PixPlate, error) {

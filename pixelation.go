@@ -7,11 +7,16 @@ package earth
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	"sync"
+	"time"
 
 	"gonum.org/v1/gonum/spatial/r3"
-	"pgregory.net/rand"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 // A Pixelation is an equal area isolatitude pixelation.
 //

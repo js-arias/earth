@@ -14,13 +14,14 @@ import (
 	"image/color"
 	"image/png"
 	"io"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/js-arias/command"
 	"github.com/js-arias/earth/model"
-	"pgregory.net/rand"
 )
 
 var Command = &command.Command{
@@ -122,6 +123,10 @@ func run(c *command.Command, args []string) error {
 		}
 	}
 	return nil
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }
 
 func readTimePix(name string) (*model.TimePix, error) {
