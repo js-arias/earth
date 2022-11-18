@@ -9,7 +9,11 @@ package add
 import (
 	"errors"
 	"fmt"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
 	"os"
+	"strings"
 
 	"github.com/js-arias/command"
 	"github.com/js-arias/earth"
@@ -18,14 +22,25 @@ import (
 
 var Command = &command.Command{
 	Usage: `add [--from <age>] [--to <age>] [--at <age>]
-	--in <model-file> --val <value>
+	[-f|--format <format>] --in <model-file> --val <value>
 	<time-pix-file>`,
 	Short: "add pixels to a time pixelation",
 	Long: `
-Command add reads pixels from a tectonic reconstruction model at a given age,
-and them to a time pixelation.
+Command add reads pixels from a reconstruction model at a given age, and them
+to a time pixelation.
 
 The flag --in is required and is used to provide the name of the input file.
+By default, a tectonic reconstruction model will be used, other kind of files
+can be used, defined by the flag --format, or -f. Valid formats are:
+
+	model	default value, a tectonic reconstruction model
+	mask	an image used as mask
+
+In the case of a mask image, a single time (defined with the flag --at in
+million years) must be defined. Also it requires that the base time pixelation
+exists. The image mask should be in plate carrée projection (also known as
+equirectangular projection), and only pixels in white will be set with the
+indicated value.
 
 The flag --val is required and sets the value used for the pixels to be
 assigned. If the pixel has a value already, the largest value will be stored.
@@ -44,6 +59,7 @@ to set a particular time stage.
 }
 
 var inFlag string
+var format string
 var valFlag int
 var fromFlag float64
 var toFlag float64
@@ -54,6 +70,8 @@ func setFlags(c *command.Command) {
 	c.Flags().Float64Var(&toFlag, "to", -1, "")
 	c.Flags().Float64Var(&atFlag, "at", -1, "")
 	c.Flags().IntVar(&valFlag, "val", -1, "")
+	c.Flags().StringVar(&format, "format", "model", "")
+	c.Flags().StringVar(&format, "f", "model", "")
 	c.Flags().StringVar(&inFlag, "in", "", "")
 }
 
@@ -72,46 +90,71 @@ func run(c *command.Command, args []string) error {
 	if inFlag == "" {
 		return c.UsageError("flag --in must be set")
 	}
-
-	tot, err := readRotModel(inFlag)
-	if err != nil {
-		return err
-	}
-
-	var stages []int64
-	if atFlag >= 0 {
-		stages = []int64{tot.ClosesStageAge(int64(atFlag * millionYears))}
-	} else {
-		st := tot.Stages()
-		from := st[len(st)-1]
-		if fromFlag >= 0 {
-			from = int64(fromFlag * millionYears)
-		}
-		to := st[0]
-		if toFlag >= 0 {
-			to = int64(toFlag * millionYears)
-		}
-		stages = make([]int64, 0, len(st))
-		for _, a := range st {
-			if a > from {
-				continue
-			}
-			if a < to {
-				continue
-			}
-			stages = append(stages, a)
-		}
-		if len(stages) == 0 {
-			return nil
-		}
-	}
-
 	output := args[0]
-	tp, err := readTimePix(output, tot.Pixelation())
-	if err != nil {
-		return err
+
+	var tp *model.TimePix
+
+	if format == "" {
+		format = "model"
 	}
-	setTimeValue(tp, tot, stages)
+	switch strings.ToLower(format) {
+	case "model":
+		tot, err := readRotModel(inFlag)
+		if err != nil {
+			return err
+		}
+
+		var stages []int64
+		if atFlag >= 0 {
+			stages = []int64{tot.ClosesStageAge(int64(atFlag * millionYears))}
+		} else {
+			st := tot.Stages()
+			from := st[len(st)-1]
+			if fromFlag >= 0 {
+				from = int64(fromFlag * millionYears)
+			}
+			to := st[0]
+			if toFlag >= 0 {
+				to = int64(toFlag * millionYears)
+			}
+			stages = make([]int64, 0, len(st))
+			for _, a := range st {
+				if a > from {
+					continue
+				}
+				if a < to {
+					continue
+				}
+				stages = append(stages, a)
+			}
+			if len(stages) == 0 {
+				return nil
+			}
+		}
+
+		tp, err = readTimePix(output, tot.Pixelation())
+		if err != nil {
+			return err
+		}
+		setTimeValue(tp, tot, stages)
+	case "mask":
+		if atFlag < 0 {
+			return fmt.Errorf("flag --at must be set for an image map")
+		}
+		age := int64(atFlag * millionYears)
+
+		mask, err := readMask(inFlag)
+		if err != nil {
+			return err
+		}
+
+		tp, err = readTimePix(output, nil)
+		if err != nil {
+			return err
+		}
+
+		setMaskValue(tp, mask, age)
+	}
 
 	if err := writeTimePix(output, tp); err != nil {
 		return err
@@ -127,6 +170,27 @@ func setTimeValue(tp *model.TimePix, tot *model.Total, ages []int64) {
 		}
 		for id := range st {
 			tp.Set(a, id, valFlag)
+		}
+	}
+}
+
+func setMaskValue(tp *model.TimePix, mask image.Image, age int64) {
+	stepX := float64(360) / float64(mask.Bounds().Dx())
+	stepY := float64(180) / float64(mask.Bounds().Dy())
+
+	for x := 0; x < mask.Bounds().Dx(); x++ {
+		lon := float64(x)*stepX - 180
+		for y := 0; y < mask.Bounds().Dy(); y++ {
+			if r, _, _, _ := mask.At(x, y).RGBA(); r < 1000 {
+				continue
+			}
+
+			lat := 90 - float64(y)*stepY
+			px := tp.Pixelation().Pixel(lat, lon).ID()
+			v, _ := tp.At(age, px)
+			if valFlag > v {
+				tp.Set(age, px, valFlag)
+			}
 		}
 	}
 }
@@ -165,6 +229,20 @@ func readRotModel(name string) (*model.Total, error) {
 		return nil, fmt.Errorf("when reading file %q: %v", name, err)
 	}
 	return tot, nil
+}
+
+func readMask(name string) (image.Image, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	img, _, err := image.Decode(f)
+	if err != nil {
+		return nil, fmt.Errorf("when decoding image mask %q: %v", name, err)
+	}
+	return img, nil
 }
 
 func writeTimePix(name string, tp *model.TimePix) (err error) {
