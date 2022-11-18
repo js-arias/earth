@@ -169,7 +169,10 @@ func setTimeValue(tp *model.TimePix, tot *model.Total, ages []int64) {
 			continue
 		}
 		for id := range st {
-			tp.Set(a, id, valFlag)
+			v, _ := tp.At(a, id)
+			if valFlag > v {
+				tp.Set(a, id, valFlag)
+			}
 		}
 	}
 }
