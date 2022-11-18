@@ -33,14 +33,15 @@ The flag --in is required and is used to provide the name of the input file.
 By default, a tectonic reconstruction model will be used, other kind of files
 can be used, defined by the flag --format, or -f. Valid formats are:
 
-	model	default value, a tectonic reconstruction model
 	mask	an image used as mask
+	model	default value, a tectonic reconstruction model
+	pix	a pixelated plates file
 
-In the case of a mask image, a single time (defined with the flag --at in
-million years) must be defined. Also it requires that the base time pixelation
-exists. The image mask should be in plate carrée projection (also known as
-equirectangular projection), and only pixels in white will be set with the
-indicated value.
+In the case of a mask image a pixelated plates file, a single time (defined
+with the flag --at in million years) must be defined. For the mask image also
+it requires that the base time pixelation exists. The image mask should be in
+plate carrée projection (also known as equirectangular projection), and only
+pixels in white will be set with the indicated value.
 
 The flag --val is required and sets the value used for the pixels to be
 assigned. If the pixel has a value already, the largest value will be stored.
@@ -154,6 +155,24 @@ func run(c *command.Command, args []string) error {
 		}
 
 		setMaskValue(tp, mask, age)
+	case "pix":
+		if atFlag < 0 {
+			return fmt.Errorf("flag --at must be set for an image map")
+		}
+		age := int64(atFlag * millionYears)
+
+		pp, err := readPixPlate(inFlag)
+		if err != nil {
+			return err
+		}
+
+		tp, err = readTimePix(output, pp.Pixelation())
+		if err != nil {
+			return err
+		}
+		setPixValue(tp, pp, age)
+	default:
+		return fmt.Errorf("format %q, not known", format)
 	}
 
 	if err := writeTimePix(output, tp); err != nil {
@@ -193,6 +212,21 @@ func setMaskValue(tp *model.TimePix, mask image.Image, age int64) {
 			v, _ := tp.At(age, px)
 			if valFlag > v {
 				tp.Set(age, px, valFlag)
+			}
+		}
+	}
+}
+
+func setPixValue(tp *model.TimePix, pp *model.PixPlate, age int64) {
+	for _, p := range pp.Plates() {
+		for _, id := range pp.Pixels(p) {
+			px := pp.Pixel(p, id)
+			if px.Begin < age || px.End > age {
+				continue
+			}
+			v, _ := tp.At(age, id)
+			if valFlag > v {
+				tp.Set(age, id, valFlag)
 			}
 		}
 	}
@@ -246,6 +280,20 @@ func readMask(name string) (image.Image, error) {
 		return nil, fmt.Errorf("when decoding image mask %q: %v", name, err)
 	}
 	return img, nil
+}
+
+func readPixPlate(name string) (*model.PixPlate, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	pp, err := model.ReadPixPlate(f, nil)
+	if err != nil {
+		return nil, fmt.Errorf("when reading file %q: %v", name, err)
+	}
+	return pp, nil
 }
 
 func writeTimePix(name string, tp *model.TimePix) (err error) {
