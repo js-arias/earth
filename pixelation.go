@@ -7,15 +7,15 @@ package earth
 import (
 	"fmt"
 	"math"
-	"math/rand"
 	"sync"
 	"time"
 
+	"golang.org/x/exp/rand"
 	"gonum.org/v1/gonum/spatial/r3"
 )
 
 func init() {
-	rand.Seed(time.Now().UnixNano())
+	rand.Seed(uint64(time.Now().UnixNano()))
 }
 
 // A Pixelation is an equal area isolatitude pixelation.
