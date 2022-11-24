@@ -148,6 +148,12 @@ func (pix *Pixelation) Random() Pixel {
 	return pix.pixels[id]
 }
 
+// RingLat returns the latitude of a ring.
+func (pix *Pixelation) RingLat(ring int) float64 {
+	px := pix.pixels[pix.rings[ring]]
+	return px.point.lat
+}
+
 // Rings returns the number of rings in the pixelation.
 func (pix *Pixelation) Rings() int {
 	return len(pix.rings)
