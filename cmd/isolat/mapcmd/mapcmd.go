@@ -28,7 +28,7 @@ import (
 
 var Command = &command.Command{
 	Usage: `map [-e|--equator <value>] [-c|--columns <value>]
-	[--box <lat,lon,lat,lon>]
+	[--box <lat,lon,lat,lon>] [--mask <image>]
 	[--points] [--pixels] [--random <value>]
 	[--bg <image>] -o|--output <out-img-file>`,
 	Short: "draw a map of an isolatitude pixelation",
@@ -52,6 +52,10 @@ If the flag --box is defined, only pixels inside the box will be draw. The box
 is defined using the format "lat,lon,lat,lon", for example "14,-94,-58,-26"
 will enclose South America.
 
+If the flag --mask is defined, the read image file will be used as a mask, so
+only pixels that are white in the mask will be draw. This flag can be combined
+with --box.
+
 If the flag --points is defined, one or more coordinate points will be read
 from the standard input. One coordinate is read per line (each coordinate
 separated by one or more spaces), first latitude and the longitude. Lines
@@ -72,6 +76,7 @@ var equator int
 var randFlag int
 var boxFlag string
 var bgFile string
+var maskFile string
 var output string
 var points bool
 var pixFlag bool
@@ -86,6 +91,7 @@ func setFlags(c *command.Command) {
 	c.Flags().IntVar(&randFlag, "random", 0, "")
 	c.Flags().StringVar(&bgFile, "bg", "", "")
 	c.Flags().StringVar(&boxFlag, "box", "", "")
+	c.Flags().StringVar(&maskFile, "mask", "", "")
 	c.Flags().StringVar(&output, "output", "", "")
 	c.Flags().StringVar(&output, "o", "", "")
 }
@@ -108,6 +114,15 @@ func run(c *command.Command, args []string) error {
 		}
 	}
 
+	var maskImage image.Image
+	if maskFile != "" {
+		var err error
+		maskImage, err = readImage(maskFile)
+		if err != nil {
+			return err
+		}
+	}
+
 	pix := earth.NewPixelation(equator)
 	var img *mapImg
 	if bgFile != "" {
@@ -115,9 +130,9 @@ func run(c *command.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		img = makeBgImage(pix, bg, boxMask)
+		img = makeBgImage(pix, bg, maskImage, boxMask)
 	} else {
-		img = makeRndImage(pix, boxMask)
+		img = makeRndImage(pix, maskImage, boxMask)
 	}
 
 	if pixFlag {
@@ -180,7 +195,7 @@ func (m *mapImg) set(px int, c color.RGBA) {
 	m.color[px] = c
 }
 
-func makeBgImage(pix *earth.Pixelation, bg image.Image, boxMask *box) *mapImg {
+func makeBgImage(pix *earth.Pixelation, bg, mask image.Image, boxMask *box) *mapImg {
 	img := &mapImg{
 		step:  360 / float64(colsFlag),
 		color: make(map[int]color.RGBA, pix.Len()),
@@ -189,6 +204,11 @@ func makeBgImage(pix *earth.Pixelation, bg image.Image, boxMask *box) *mapImg {
 
 	stepX := float64(360) / float64(bg.Bounds().Dx())
 	stepY := float64(180) / float64(bg.Bounds().Dy())
+	var maskX, maskY float64
+	if mask != nil {
+		maskX = float64(360) / float64(mask.Bounds().Dx())
+		maskY = float64(180) / float64(mask.Bounds().Dy())
+	}
 	for id := 0; id < pix.Len(); id++ {
 		px := pix.ID(id).Point()
 		if boxMask != nil {
@@ -196,9 +216,17 @@ func makeBgImage(pix *earth.Pixelation, bg image.Image, boxMask *box) *mapImg {
 				continue
 			}
 		}
-
+		if mask != nil {
+			x := int((px.Longitude() + 180) / maskX)
+			y := int((90 - px.Latitude()) / maskY)
+			r, _, _, a := mask.At(x, y).RGBA()
+			if (a>>8) < 200 || (r>>8) < 200 {
+				continue
+			}
+		}
 		x := int((px.Longitude() + 180) / stepX)
 		y := int((90 - px.Latitude()) / stepY)
+
 		r, g, b, a := bg.At(x, y).RGBA()
 		c := color.RGBA{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), uint8(a >> 8)}
 		img.color[id] = c
@@ -207,11 +235,17 @@ func makeBgImage(pix *earth.Pixelation, bg image.Image, boxMask *box) *mapImg {
 	return img
 }
 
-func makeRndImage(pix *earth.Pixelation, boxMask *box) *mapImg {
+func makeRndImage(pix *earth.Pixelation, mask image.Image, boxMask *box) *mapImg {
 	img := &mapImg{
 		step:  360 / float64(colsFlag),
 		color: make(map[int]color.RGBA, pix.Len()),
 		pix:   pix,
+	}
+
+	var maskX, maskY float64
+	if mask != nil {
+		maskX = float64(360) / float64(mask.Bounds().Dx())
+		maskY = float64(180) / float64(mask.Bounds().Dy())
 	}
 	for id := 0; id < pix.Len(); id++ {
 		px := pix.ID(id).Point()
@@ -220,6 +254,16 @@ func makeRndImage(pix *earth.Pixelation, boxMask *box) *mapImg {
 				continue
 			}
 		}
+
+		if mask != nil {
+			x := int((px.Longitude() + 180) / maskX)
+			y := int((90 - px.Latitude()) / maskY)
+			r, _, _, a := mask.At(x, y).RGBA()
+			if (a>>8) < 200 || (r>>8) < 200 {
+				continue
+			}
+		}
+
 		img.color[id] = color.RGBA{randUint8(), randUint8(), randUint8(), 255}
 	}
 	return img

@@ -8,6 +8,10 @@ package lencmd
 
 import (
 	"fmt"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
+	"os"
 	"strconv"
 	"strings"
 
@@ -30,6 +34,10 @@ If the flag --box is defined, only pixels inside the box will be count. The box
 is defined using the format "lat,lon,lat,lon", for example "14,-94,-58,-26"
 will enclose South America.
 
+If the flag --mask is defined, the read image file will be used as a mask, so
+only pixels that are white in the mask will be count. This flag can be combined
+with --box.
+
 If the flag --rings is defined, the number of pixels at each ring will be
 printed.
 	`,
@@ -40,30 +48,63 @@ printed.
 var equator int
 var rings bool
 var boxFlag string
+var maskFile string
 
 func setFlags(c *command.Command) {
 	c.Flags().BoolVar(&rings, "rings", false, "")
 	c.Flags().IntVar(&equator, "equator", 360, "")
 	c.Flags().IntVar(&equator, "e", 360, "")
 	c.Flags().StringVar(&boxFlag, "box", "", "")
+	c.Flags().StringVar(&maskFile, "mask", "", "")
 }
 
 func run(c *command.Command, args []string) error {
 	pix := earth.NewPixelation(equator)
+
+	var boxMask *box
 	if boxFlag != "" {
-		boxMask, err := getBox()
+		var err error
+		boxMask, err = getBox()
 		if err != nil {
 			return err
+		}
+	}
+
+	var mask image.Image
+	if maskFile != "" {
+		var err error
+		mask, err = readImage(maskFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	if boxMask != nil || mask != nil {
+		var maskX, maskY float64
+		if mask != nil {
+			maskX = float64(360) / float64(mask.Bounds().Dx())
+			maskY = float64(180) / float64(mask.Bounds().Dy())
 		}
 
 		sum := 0
 		for id := 0; id < pix.Len(); id++ {
 			px := pix.ID(id).Point()
-			if boxMask.isInside(px.Latitude(), px.Longitude()) {
-				sum++
+			if boxMask != nil {
+				if !boxMask.isInside(px.Latitude(), px.Longitude()) {
+					continue
+				}
 			}
+			if mask != nil {
+				x := int((px.Longitude() + 180) / maskX)
+				y := int((90 - px.Latitude()) / maskY)
+				r, _, _, a := mask.At(x, y).RGBA()
+				if (a>>8) < 200 || (r>>8) < 200 {
+					continue
+				}
+			}
+			sum++
 		}
-		fmt.Fprintf(c.Stdout(), "pixels: %d\ninside box: %d\n", pix.Len(), sum)
+		fmt.Fprintf(c.Stdout(), "pixels: %d\ninside mask: %d\n", pix.Len(), sum)
 		return nil
 	}
 
@@ -145,4 +186,18 @@ func parsePoint(c1, c2 string) (earth.Point, error) {
 	}
 
 	return earth.NewPoint(lat, lon), nil
+}
+
+func readImage(name string) (image.Image, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	img, _, err := image.Decode(f)
+	if err != nil {
+		return nil, fmt.Errorf("when decoding image mask %q: %v", name, err)
+	}
+	return img, nil
 }
