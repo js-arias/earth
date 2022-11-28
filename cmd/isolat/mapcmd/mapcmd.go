@@ -29,7 +29,7 @@ import (
 var Command = &command.Command{
 	Usage: `map [-e|--equator <value>] [-c|--columns <value>]
 	[--points] [--pixels] [--random <value>]
-	[--mask <image>] -o|--output <out-img-file>`,
+	[--bg <image>] -o|--output <out-img-file>`,
 	Short: "draw a map of an isolatitude pixelation",
 	Long: `
 Package map draws the pixels of an isolatitude pixelation into an image file
@@ -44,8 +44,8 @@ have the same color (selected at random). By default the image will be 3600
 pixels wide, use the flag --column, or -c, to define a different number of
 image columns.
 
-If the flag --mask is defined, the read image file will be used as mask, so the
-pixel colors will be taken from the mask.
+If the flag --bg is defined, the read image file will be used as the background
+image, so the pixel colors will be taken from that image.
 
 If the flag --points is defined, one or more coordinate points will be read
 from the standard input. One coordinate is read per line (each coordinate
@@ -65,7 +65,7 @@ added. The pixels will be in solid red (RGB = 255, 0, 0).
 var colsFlag int
 var equator int
 var randFlag int
-var maskFile string
+var bgFile string
 var output string
 var points bool
 var pixFlag bool
@@ -78,7 +78,7 @@ func setFlags(c *command.Command) {
 	c.Flags().IntVar(&equator, "equator", 360, "")
 	c.Flags().IntVar(&equator, "e", 360, "")
 	c.Flags().IntVar(&randFlag, "random", 0, "")
-	c.Flags().StringVar(&maskFile, "mask", "", "")
+	c.Flags().StringVar(&bgFile, "bg", "", "")
 	c.Flags().StringVar(&output, "output", "", "")
 	c.Flags().StringVar(&output, "o", "", "")
 }
@@ -94,12 +94,12 @@ func run(c *command.Command, args []string) error {
 
 	pix := earth.NewPixelation(equator)
 	var img *mapImg
-	if maskFile != "" {
-		mask, err := readMask(maskFile)
+	if bgFile != "" {
+		bg, err := readImage(bgFile)
 		if err != nil {
 			return err
 		}
-		img = makeMaskImage(pix, mask)
+		img = makeBgImage(pix, bg)
 	} else {
 		img = makeRndImage(pix)
 	}
@@ -160,20 +160,20 @@ func (m *mapImg) set(px int, c color.RGBA) {
 	m.color[px] = c
 }
 
-func makeMaskImage(pix *earth.Pixelation, mask image.Image) *mapImg {
+func makeBgImage(pix *earth.Pixelation, bg image.Image) *mapImg {
 	img := &mapImg{
 		step:  360 / float64(colsFlag),
 		color: make(map[int]color.RGBA, pix.Len()),
 		pix:   pix,
 	}
 
-	stepX := float64(360) / float64(mask.Bounds().Dx())
-	stepY := float64(180) / float64(mask.Bounds().Dy())
+	stepX := float64(360) / float64(bg.Bounds().Dx())
+	stepY := float64(180) / float64(bg.Bounds().Dy())
 	for id := 0; id < pix.Len(); id++ {
 		px := pix.ID(id).Point()
 		x := int((px.Longitude() + 180) / stepX)
 		y := int((90 - px.Latitude()) / stepY)
-		r, g, b, a := mask.At(x, y).RGBA()
+		r, g, b, a := bg.At(x, y).RGBA()
 		c := color.RGBA{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), uint8(a >> 8)}
 		img.color[id] = c
 	}
@@ -197,7 +197,7 @@ func randUint8() uint8 {
 	return uint8(rand.Intn(255))
 }
 
-func readMask(name string) (image.Image, error) {
+func readImage(name string) (image.Image, error) {
 	f, err := os.Open(name)
 	if err != nil {
 		return nil, err
