@@ -18,7 +18,7 @@ import (
 )
 
 var Command = &command.Command{
-	Usage: "list [<pix-file>...]",
+	Usage: "list [--len] [<pix-file>...]",
 	Short: "list plates from a file with pixelated plates",
 	Long: `
 Command list reads one or more pixelated plates files and prints the list of
@@ -27,8 +27,18 @@ interval.
 
 One or more input files can be given as arguments. If no files are given the
 input will be read from the standard input.
+
+If the flag --len is defined, the number of pixels of each feature will be
+given.
 	`,
-	Run: run,
+	SetFlags: setFlags,
+	Run:      run,
+}
+
+var lenFlag bool
+
+func setFlags(c *command.Command) {
+	c.Flags().BoolVar(&lenFlag, "len", false, "")
 }
 
 func run(c *command.Command, args []string) error {
@@ -79,7 +89,8 @@ func addFeatures(pp *model.PixPlate, pd map[int]*plateData) {
 			pd[plate] = p
 		}
 
-		for _, id := range pp.Pixels(plate) {
+		pix := pp.Pixels(plate)
+		for _, id := range pix {
 			px := pp.Pixel(plate, id)
 			name := px.Name
 			if name == "" {
@@ -91,6 +102,7 @@ func addFeatures(pp *model.PixPlate, pd map[int]*plateData) {
 					name:  name,
 					begin: px.Begin,
 					end:   px.End,
+					size:  1,
 				}
 				p.features[name] = f
 				continue
@@ -102,6 +114,7 @@ func addFeatures(pp *model.PixPlate, pd map[int]*plateData) {
 			if px.End < f.end {
 				f.end = px.End
 			}
+			f.size++
 		}
 	}
 }
@@ -115,6 +128,7 @@ type feature struct {
 	name  string
 	begin int64
 	end   int64
+	size  int
 }
 
 // MillionYears is used to transform ages
@@ -139,7 +153,11 @@ func printFeatures(w io.Writer, pd map[int]*plateData) {
 
 		for _, nm := range names {
 			f := p.features[nm]
-			fmt.Fprintf(w, "%d\t%s\t%.6f\t%.6f\n", plate, nm, float64(f.begin)/millionYears, float64(f.end)/millionYears)
+			fmt.Fprintf(w, "%d\t%s\t%.6f\t%.6f", plate, nm, float64(f.begin)/millionYears, float64(f.end)/millionYears)
+			if lenFlag {
+				fmt.Fprintf(w, "\t%d", f.size)
+			}
+			fmt.Fprintf(w, "\n")
 		}
 	}
 }
