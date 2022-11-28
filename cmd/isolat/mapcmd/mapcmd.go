@@ -28,6 +28,7 @@ import (
 
 var Command = &command.Command{
 	Usage: `map [-e|--equator <value>] [-c|--columns <value>]
+	[--box <lat,lon,lat,lon>]
 	[--points] [--pixels] [--random <value>]
 	[--bg <image>] -o|--output <out-img-file>`,
 	Short: "draw a map of an isolatitude pixelation",
@@ -47,6 +48,10 @@ image columns.
 If the flag --bg is defined, the read image file will be used as the background
 image, so the pixel colors will be taken from that image.
 
+If the flag --box is defined, only pixels inside the box will be draw. The box
+is defined using the format "lat,lon,lat,lon", for example "14,-94,-58,-26"
+will enclose South America.
+
 If the flag --points is defined, one or more coordinate points will be read
 from the standard input. One coordinate is read per line (each coordinate
 separated by one or more spaces), first latitude and the longitude. Lines
@@ -65,6 +70,7 @@ added. The pixels will be in solid red (RGB = 255, 0, 0).
 var colsFlag int
 var equator int
 var randFlag int
+var boxFlag string
 var bgFile string
 var output string
 var points bool
@@ -79,6 +85,7 @@ func setFlags(c *command.Command) {
 	c.Flags().IntVar(&equator, "e", 360, "")
 	c.Flags().IntVar(&randFlag, "random", 0, "")
 	c.Flags().StringVar(&bgFile, "bg", "", "")
+	c.Flags().StringVar(&boxFlag, "box", "", "")
 	c.Flags().StringVar(&output, "output", "", "")
 	c.Flags().StringVar(&output, "o", "", "")
 }
@@ -92,6 +99,15 @@ func run(c *command.Command, args []string) error {
 		colsFlag++
 	}
 
+	var boxMask *box
+	if boxFlag != "" {
+		var err error
+		boxMask, err = getBox()
+		if err != nil {
+			return err
+		}
+	}
+
 	pix := earth.NewPixelation(equator)
 	var img *mapImg
 	if bgFile != "" {
@@ -99,9 +115,9 @@ func run(c *command.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		img = makeBgImage(pix, bg)
+		img = makeBgImage(pix, bg, boxMask)
 	} else {
-		img = makeRndImage(pix)
+		img = makeRndImage(pix, boxMask)
 	}
 
 	if pixFlag {
@@ -153,14 +169,18 @@ func (m *mapImg) At(x, y int) color.Color {
 	lon := float64(x)*m.step - 180
 
 	pos := m.pix.Pixel(lat, lon).ID()
-	return m.color[pos]
+	c, ok := m.color[pos]
+	if !ok {
+		return color.RGBA{0, 0, 0, 0}
+	}
+	return c
 }
 
 func (m *mapImg) set(px int, c color.RGBA) {
 	m.color[px] = c
 }
 
-func makeBgImage(pix *earth.Pixelation, bg image.Image) *mapImg {
+func makeBgImage(pix *earth.Pixelation, bg image.Image, boxMask *box) *mapImg {
 	img := &mapImg{
 		step:  360 / float64(colsFlag),
 		color: make(map[int]color.RGBA, pix.Len()),
@@ -171,6 +191,12 @@ func makeBgImage(pix *earth.Pixelation, bg image.Image) *mapImg {
 	stepY := float64(180) / float64(bg.Bounds().Dy())
 	for id := 0; id < pix.Len(); id++ {
 		px := pix.ID(id).Point()
+		if boxMask != nil {
+			if !boxMask.isInside(px.Latitude(), px.Longitude()) {
+				continue
+			}
+		}
+
 		x := int((px.Longitude() + 180) / stepX)
 		y := int((90 - px.Latitude()) / stepY)
 		r, g, b, a := bg.At(x, y).RGBA()
@@ -181,13 +207,19 @@ func makeBgImage(pix *earth.Pixelation, bg image.Image) *mapImg {
 	return img
 }
 
-func makeRndImage(pix *earth.Pixelation) *mapImg {
+func makeRndImage(pix *earth.Pixelation, boxMask *box) *mapImg {
 	img := &mapImg{
 		step:  360 / float64(colsFlag),
 		color: make(map[int]color.RGBA, pix.Len()),
 		pix:   pix,
 	}
 	for id := 0; id < pix.Len(); id++ {
+		px := pix.ID(id).Point()
+		if boxMask != nil {
+			if !boxMask.isInside(px.Latitude(), px.Longitude()) {
+				continue
+			}
+		}
 		img.color[id] = color.RGBA{randUint8(), randUint8(), randUint8(), 255}
 	}
 	return img
@@ -308,4 +340,74 @@ func readPixID(s string, max int) (int, error) {
 		return 0, fmt.Errorf("invalid value %q: invalid pixel", s)
 	}
 	return v, nil
+}
+
+type box struct {
+	p1 earth.Point
+	p2 earth.Point
+}
+
+func getBox() (*box, error) {
+	cs := strings.Split(boxFlag, ",")
+	if len(cs) != 4 {
+		return nil, fmt.Errorf("invalid --box value %q", boxFlag)
+	}
+
+	p1, err := parsePoint(cs[0], cs[1])
+	if err != nil {
+		return nil, err
+	}
+	p2, err := parsePoint(cs[2], cs[3])
+	if err != nil {
+		return nil, err
+	}
+	if p1.Latitude() < p2.Latitude() {
+		p1, p2 = earth.NewPoint(p2.Latitude(), p1.Longitude()), earth.NewPoint(p1.Latitude(), p2.Longitude())
+	}
+	if p1.Longitude() > p2.Longitude() {
+		p1, p2 = earth.NewPoint(p1.Latitude(), p2.Longitude()), earth.NewPoint(p2.Latitude(), p1.Longitude())
+	}
+
+	return &box{
+		p1: p1,
+		p2: p2,
+	}, nil
+}
+
+func (b *box) isInside(lat, lon float64) bool {
+	if lat > b.p1.Latitude() {
+		return false
+	}
+	if lat < b.p2.Latitude() {
+		return false
+	}
+
+	if lon < b.p1.Longitude() {
+		return false
+	}
+	if lon > b.p2.Longitude() {
+		return false
+	}
+
+	return true
+}
+
+func parsePoint(c1, c2 string) (earth.Point, error) {
+	lat, err := strconv.ParseFloat(c1, 64)
+	if err != nil {
+		return earth.Point{}, fmt.Errorf("invalid latitude: %v: read %q", err, c1)
+	}
+	if lat < -90 || lat > 90 {
+		return earth.Point{}, fmt.Errorf("invalid latitude: %.6f", lat)
+	}
+
+	lon, err := strconv.ParseFloat(c2, 64)
+	if err != nil {
+		return earth.Point{}, fmt.Errorf("invalid longitude: %v: read %q", err, c2)
+	}
+	if lon < -180 || lon > 180 {
+		return earth.Point{}, fmt.Errorf("invalid longitude: %.6f", lon)
+	}
+
+	return earth.NewPoint(lat, lon), nil
 }
