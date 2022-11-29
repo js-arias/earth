@@ -200,20 +200,20 @@ func setMaskValue(tp *model.TimePix, mask image.Image, age int64) {
 	stepX := float64(360) / float64(mask.Bounds().Dx())
 	stepY := float64(180) / float64(mask.Bounds().Dy())
 
-	for x := 0; x < mask.Bounds().Dx(); x++ {
-		lon := float64(x)*stepX - 180
-		for y := 0; y < mask.Bounds().Dy(); y++ {
-			if r, _, _, _ := mask.At(x, y).RGBA(); r < 1000 {
-				continue
-			}
-
-			lat := 90 - float64(y)*stepY
-			px := tp.Pixelation().Pixel(lat, lon).ID()
-			v, _ := tp.At(age, px)
-			if valFlag > v {
-				tp.Set(age, px, valFlag)
-			}
+	pix := tp.Pixelation()
+	for px := 0; px < pix.Len(); px++ {
+		if v, _ := tp.At(age, px); v >= valFlag {
+			continue
 		}
+
+		pt := pix.ID(px).Point()
+		x := int((pt.Longitude() + 180) / stepX)
+		y := int((90 - pt.Latitude()) / stepY)
+		if r, _, _, _ := mask.At(x, y).RGBA(); r < 1000 {
+			continue
+		}
+
+		tp.Set(age, px, valFlag)
 	}
 }
 
