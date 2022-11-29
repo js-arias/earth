@@ -15,7 +15,7 @@ import (
 )
 
 // Pixels return an slice
-// with the OD of pixels in a pixelation
+// with the ID of pixels in a pixelation
 // that are part of a feature.
 func (f Feature) Pixels(pix *earth.Pixelation) []int {
 	r := &raster{
@@ -47,7 +47,10 @@ func (r *raster) pixSet() []int {
 }
 
 func (r *raster) doRaster(poly Polygon) {
-	cols := r.pix.Equator() * 10
+	cols := 3600
+	if c := r.pix.Equator() * 10; c > cols {
+		cols = c
+	}
 
 	north, south := poly.bounds()
 	img := &azimuthal{
@@ -56,6 +59,8 @@ func (r *raster) doRaster(poly Polygon) {
 		pixels:     make([]bool, cols*cols),
 		radius:     float64(cols) / (2 * math.Pi),
 		center:     float64(cols) / 2,
+		north:      -90,
+		south:      90,
 	}
 
 	ras := rasterizer.NewRasterizer(cols, cols)
@@ -71,21 +76,8 @@ func (r *raster) doRaster(poly Polygon) {
 	src := &filled{cols}
 	ras.Draw(img, img.Bounds(), src, image.Pt(0, 0))
 
-	for pos, v := range img.pixels {
-		if !v {
-			continue
-		}
-		lat, lon := img.latLon(pos)
-		px := r.pix.Pixel(lat, lon).ID()
-		r.pixels[px] = true
-		if lat > north {
-			north = lat
-		}
-		if lat < south {
-			south = lat
-		}
-	}
-
+	north = img.north + r.pix.Step()
+	south = img.south - r.pix.Step()
 	for px := 0; px < r.pix.Len(); px++ {
 		pt := r.pix.ID(px).Point()
 		if pt.Latitude() > north {
@@ -100,6 +92,13 @@ func (r *raster) doRaster(poly Polygon) {
 		if img.pixels[pos] {
 			r.pixels[px] = true
 		}
+	}
+
+	// we add the polygon vertices
+	// to be sure that this pixels are included
+	for _, pt := range poly {
+		px := r.pix.Pixel(pt.Lat, pt.Lon).ID()
+		r.pixels[px] = true
 	}
 }
 
@@ -130,6 +129,9 @@ type azimuthal struct {
 
 	radius float64
 	center float64
+
+	north float64
+	south float64
 }
 
 func (a *azimuthal) ColorModel() color.Model { return color.RGBAModel }
@@ -150,6 +152,14 @@ func (a *azimuthal) Set(x, y int, c color.Color) {
 		return
 	}
 	a.pixels[pos] = true
+
+	lat := a.lat(pos)
+	if lat > a.north {
+		a.north = lat
+	}
+	if lat < a.south {
+		a.south = lat
+	}
 }
 
 func (a *azimuthal) xy(lat, lon float64) (x, y float64) {
@@ -167,26 +177,17 @@ func (a *azimuthal) xy(lat, lon float64) (x, y float64) {
 	return x + a.center, y + a.center
 }
 
-func (a *azimuthal) latLon(pos int) (lat, lon float64) {
+func (a *azimuthal) lat(pos int) float64 {
 	x := float64(pos/a.cols) + 0.5 - a.center
 	y := float64(pos%a.cols) + 0.5 - a.center
 
 	rho := math.Hypot(x, y)
 	nLat := earth.ToDegree(rho / a.radius)
-	lat = 90 - nLat
+	lat := 90 - nLat
 	if !a.hemisphere {
 		lat = nLat - 90
 	}
-	theta := math.Asin(x / rho)
-	lon = earth.ToDegree(theta)
-	if y > 0 {
-		if lon > 0 {
-			lon = 180 - lon
-		} else {
-			lon = -180 - lon
-		}
-	}
-	return lat, lon
+	return lat
 }
 
 type filled struct {

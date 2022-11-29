@@ -159,6 +159,13 @@ func (pix *Pixelation) Rings() int {
 	return len(pix.rings)
 }
 
+// Step returns the size of a pixel
+// at equator
+// or its latitude size.
+func(pix *Pixelation) Step() float64 {
+	return pix.dStep
+}
+
 // AddPixels adds pixels to a pixelation ring.
 func (pix *Pixelation) addPixels(r int) {
 	lat := 90 - float64(r)*pix.dStep
