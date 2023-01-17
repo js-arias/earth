@@ -128,3 +128,27 @@ func TestNormalMean(t *testing.T) {
 		t.Errorf("poles: mean: got %.6f, want %.6f", lat, 0.0)
 	}
 }
+
+func TestInvChord2(t *testing.T) {
+	pix := earth.NewPixelation(360)
+	n := dist.NewNormal(1, pix)
+	bound := 0.95
+
+	np := pix.Pixel(90, 0)
+
+	c2 := n.InvChord2(bound)
+	for i := 0; i < pix.Len(); i++ {
+		px := pix.ID(i)
+		ch2 := earth.Chord2(np.Point(), px.Point())
+		dist := earth.Distance(np.Point(), px.Point())
+		if ch2 >= c2 {
+			if n.CDF(dist) <= bound {
+				t.Errorf("%.6f: inside: at chord distance %.6f [%.6f], CDF is %.6f", c2, ch2, dist, n.CDF(dist))
+			}
+			continue
+		}
+		if n.CDF(dist) > bound {
+			t.Errorf("%.6f: outside: at chord distance %.6f [%.6f], CDF is %.6f", c2, ch2, dist, n.CDF(dist))
+		}
+	}
+}

@@ -9,6 +9,7 @@ import (
 	"math"
 
 	"github.com/js-arias/earth"
+	"golang.org/x/exp/slices"
 )
 
 // Normal is an isotropic univariate spherical normal distribution
@@ -92,6 +93,20 @@ func (n Normal) CDF(dist float64) float64 {
 		return 1
 	}
 	return n.cdf[r]
+}
+
+// InvChord2 returns the square of the Euclidean chord distance
+// for the maximum distance
+// that is inside the indicated cumulative density.
+//
+// This is useful because sometimes we want to know
+// if a given pixel is inside or outside a critical CDF value
+// and then using the great circle distance.
+func (n Normal) InvChord2(cd float64) float64 {
+	r, _ := slices.BinarySearch(n.cdf, cd)
+	px := n.pix.FirstPix(r)
+	np := n.pix.Pixel(90, 0)
+	return earth.Chord2(px.Point(), np.Point())
 }
 
 // Lambda returns the concentration parameter
