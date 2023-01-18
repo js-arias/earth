@@ -129,7 +129,7 @@ func TestNormalMean(t *testing.T) {
 	}
 }
 
-func TestInvChord2(t *testing.T) {
+func TestNormalQuantileChord2(t *testing.T) {
 	pix := earth.NewPixelation(360)
 	n := dist.NewNormal(1, pix)
 	bound := 0.95
