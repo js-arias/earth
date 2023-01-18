@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/js-arias/earth/pixprob"
+	"github.com/js-arias/earth/stat/pixprob"
 )
 
 func TestReadPixel(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/js-arias/earth"
-	"github.com/js-arias/earth/dist"
+	"github.com/js-arias/earth/stat/dist"
 )
 
 func TestNormal(t *testing.T) {
