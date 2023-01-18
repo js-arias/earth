@@ -95,14 +95,14 @@ func (n Normal) CDF(dist float64) float64 {
 	return n.cdf[r]
 }
 
-// InvChord2 returns the square of the Euclidean chord distance
+// QuantileChord2 returns the square of the Euclidean chord distance
 // for the maximum distance
 // that is inside the indicated cumulative density.
 //
 // This is useful because sometimes we want to know
 // if a given pixel is inside or outside a critical CDF value
 // and then using the great circle distance.
-func (n Normal) InvChord2(cd float64) float64 {
+func (n Normal) QuantileChord2(cd float64) float64 {
 	r, _ := slices.BinarySearch(n.cdf, cd)
 	px := n.pix.FirstPix(r)
 	np := n.pix.Pixel(90, 0)

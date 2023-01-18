@@ -136,7 +136,7 @@ func TestInvChord2(t *testing.T) {
 
 	np := pix.Pixel(90, 0)
 
-	c2 := n.InvChord2(bound)
+	c2 := n.QuantileChord2(bound)
 	for i := 0; i < pix.Len(); i++ {
 		px := pix.ID(i)
 		ch2 := earth.Chord2(np.Point(), px.Point())
