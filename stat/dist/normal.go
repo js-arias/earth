@@ -7,10 +7,16 @@ package dist
 
 import (
 	"math"
+	"time"
 
 	"github.com/js-arias/earth"
+	"golang.org/x/exp/rand"
 	"golang.org/x/exp/slices"
 )
+
+func init() {
+	rand.Seed(uint64(time.Now().UnixNano()))
+}
 
 // Normal is an isotropic univariate spherical normal distribution
 // discretized over a pixelation.
@@ -143,6 +149,41 @@ func (n Normal) Prob(dist float64) float64 {
 		return 0
 	}
 	return n.pdf[r]
+}
+
+// Rand returns a random pixel
+// from the underlying pixelation
+// draw from an spherical normal
+// which mean is the pixel u.
+//
+// It use a simple rejection-sampling algorithm,
+// with an uniform proposal distribution for each pixel.
+// The proposal pixel is accepted with a probability:
+//
+//	p = SN(x) / (Uniform(x) * c)
+//
+// where SN is the PDF of a pixel x with the spherical normal,
+// Uniform is the PDF of the uniform distribution
+// and c is a constant chosen such that SN(x) < Uniform(x)*c for all x.
+func (n Normal) Rand(u earth.Pixel) earth.Pixel {
+	uPt := u.Point()
+	logP := -math.Log(float64(n.pix.Len()))
+
+	// As the maximum probability point for the normal
+	// is mean pixel,
+	// we guarantee that any value of SN(x)
+	// is smaller than Uniform(x)*c.
+	c := math.Exp(n.logPDF[0]-logP) * 2
+	for {
+		tp := n.pix.Random()
+		dist := earth.Distance(uPt, tp.Point())
+
+		logT := n.LogProb(dist)
+		accept := math.Exp(logT-logP) / c
+		if rand.Float64() < accept {
+			return tp
+		}
+	}
 }
 
 // Ring returns the value of the probability density function
