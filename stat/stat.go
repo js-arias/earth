@@ -6,6 +6,7 @@
 package stat
 
 import (
+	"github.com/js-arias/earth"
 	"github.com/js-arias/earth/model"
 	"github.com/js-arias/earth/stat/pixprob"
 )
@@ -17,7 +18,7 @@ type DistProber interface {
 	// Prob returns the value of the probability density function
 	// for a pixel at a distance dist
 	// (in radians).
-	Prob(float64)
+	Prob(float64) float64
 }
 
 // QuantileChord2er is an interface for a discrete spherical distribution
@@ -40,6 +41,36 @@ type QuantileChord2er interface {
 // a set of pixel priors,
 // and a bound for the CDF of the distribution
 // (i.e. pixels outside the indicated CDF in d will be ignored).
-func KDE(d QuantileChord2er, p map[int]float64, tp *model.TimePix, age int64, prior pixprob.Pixel) map[int]float64 {
-	return nil
+func KDE(d QuantileChord2er, p map[int]float64, tp *model.TimePix, age int64, prior pixprob.Pixel, bound float64) map[int]float64 {
+	age = tp.CloserStageAge(age)
+
+	maxChord2 := d.QuantileChord2(bound)
+	density := make(map[int]float64)
+	for px := 0; px < tp.Pixelation().Len(); px++ {
+		v, _ := tp.At(age, px)
+		pp := 1.0
+		if prior != nil {
+			pp = prior.Prior(v)
+			if pp == 0 {
+				continue
+			}
+		}
+
+		pt1 := tp.Pixelation().ID(px).Point()
+
+		var sum float64
+		for rp, w := range p {
+			pt2 := tp.Pixelation().ID(rp).Point()
+			if earth.Chord2(pt1, pt2) <maxChord2 {
+				continue
+			}
+			dist := earth.Distance(pt1, pt2)
+			sum += d.Prob(dist)*w
+		}
+		if sum == 0 {
+			continue
+		}
+		density[px] = sum*pp
+	}
+	return density
 }
