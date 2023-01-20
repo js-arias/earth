@@ -156,30 +156,20 @@ func (n Normal) Prob(dist float64) float64 {
 // draw from an spherical normal
 // which mean is the pixel u.
 //
-// It use a simple rejection-sampling algorithm,
-// with an uniform proposal distribution for each pixel.
-// The proposal pixel is accepted with a probability:
-//
-//	p = SN(x) / (Uniform(x) * c)
-//
-// where SN is the PDF of a pixel x with the spherical normal,
-// Uniform is the PDF of the uniform distribution
-// and c is a constant chosen such that SN(x) < Uniform(x)*c for all x.
+// It use a simple rejection-sampling algorithm
+// based on an uniform distribution,
+// therefore,
+// as the concentration increase,
+// the algorithm will be slower.
 func (n Normal) Rand(u earth.Pixel) earth.Pixel {
 	uPt := u.Point()
-	logP := -math.Log(float64(n.pix.Len()))
-
-	// As the maximum probability point for the normal
-	// is mean pixel,
-	// we guarantee that any value of SN(x)
-	// is smaller than Uniform(x)*c.
-	c := math.Exp(n.logPDF[0]-logP) * 2
+	logP := n.logPDF[0]
 	for {
 		tp := n.pix.Random()
 		dist := earth.Distance(uPt, tp.Point())
 
 		logT := n.LogProb(dist)
-		accept := math.Exp(logT-logP) / c
+		accept := math.Exp(logT - logP)
 		if rand.Float64() < accept {
 			return tp
 		}
