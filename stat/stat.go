@@ -61,16 +61,16 @@ func KDE(d QuantileChord2er, p map[int]float64, tp *model.TimePix, age int64, pr
 		var sum float64
 		for rp, w := range p {
 			pt2 := tp.Pixelation().ID(rp).Point()
-			if earth.Chord2(pt1, pt2) <maxChord2 {
+			if earth.Chord2(pt1, pt2) > maxChord2 {
 				continue
 			}
 			dist := earth.Distance(pt1, pt2)
-			sum += d.Prob(dist)*w
+			sum += d.Prob(dist) * w
 		}
 		if sum == 0 {
 			continue
 		}
-		density[px] = sum*pp
+		density[px] = sum * pp
 	}
 	return density
 }
