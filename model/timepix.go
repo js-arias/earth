@@ -109,6 +109,18 @@ func (tp *TimePix) Set(age int64, pixel, value int) {
 	st.values[pixel] = value
 }
 
+// Stage returns the values for all pixels
+// at a given age
+// (in years).
+func (tp *TimePix) Stage(age int64) map[int]int {
+	st, ok := tp.stages[age]
+	if !ok {
+		return nil
+	}
+
+	return st.values
+}
+
 // Stages returns the time stages defined
 // for a time pixelation.
 func (tp *TimePix) Stages() []int64 {

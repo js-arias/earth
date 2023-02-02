@@ -118,4 +118,16 @@ func testTimePix(t testing.TB, tp *model.TimePix) {
 		}
 	}
 
+	st100 := map[int]int{
+		19051: 1,
+		19055: 1,
+		19409: 1,
+		19766: 1,
+		20122: 1,
+		20479: 1,
+		20480: 1,
+	}
+	if st := tp.Stage(100_000_000); !reflect.DeepEqual(st, st100) {
+		t.Errorf("stage at 100_000_000: got %v, want %v", st, st100)
+	}
 }
