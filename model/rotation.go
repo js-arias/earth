@@ -25,7 +25,7 @@ type Total struct {
 	pix *earth.Pixelation
 
 	// Reconstructed stages
-	stages map[int64]*rotation
+	stages map[int64]*Rotation
 }
 
 // NewTotal returns a collection of total rotations
@@ -35,20 +35,20 @@ func NewTotal(rec *Recons) *Total {
 
 	t := &Total{
 		pix:    rec.Pixelation(),
-		stages: make(map[int64]*rotation),
+		stages: make(map[int64]*Rotation),
 	}
 
 	plates := rec.Plates()
 	for _, a := range st {
-		rot := &rotation{
-			from: 0,
-			to:   a,
-			rot:  make(map[int][]int),
+		rot := &Rotation{
+			From: 0,
+			To:   a,
+			Rot:  make(map[int][]int),
 		}
 		for _, p := range plates {
 			sp := rec.PixStage(p, a)
 			for from, to := range sp {
-				rot.rot[from] = append(rot.rot[from], to...)
+				rot.Rot[from] = append(rot.Rot[from], to...)
 			}
 		}
 		t.stages[a] = rot
@@ -122,7 +122,7 @@ func ReadTotal(r io.Reader, pix *earth.Pixelation, inverse bool) (*Total, error)
 		if tot == nil {
 			tot = &Total{
 				pix:     pix,
-				stages:  make(map[int64]*rotation),
+				stages:  make(map[int64]*Rotation),
 				inverse: inverse,
 			}
 		}
@@ -135,14 +135,14 @@ func ReadTotal(r io.Reader, pix *earth.Pixelation, inverse bool) (*Total, error)
 
 		rot, ok := tot.stages[age]
 		if !ok {
-			rot = &rotation{
-				from: 0,
-				to:   age,
-				rot:  make(map[int][]int),
+			rot = &Rotation{
+				From: 0,
+				To:   age,
+				Rot:  make(map[int][]int),
 			}
 			if inverse {
-				rot.from = age
-				rot.to = 0
+				rot.From = age
+				rot.To = 0
 			}
 			tot.stages[age] = rot
 		}
@@ -164,9 +164,9 @@ func ReadTotal(r io.Reader, pix *earth.Pixelation, inverse bool) (*Total, error)
 			return nil, fmt.Errorf("on row %d: field %q: invalid pixel value %d", ln, f, sID)
 		}
 		if inverse {
-			rot.rot[sID] = append(rot.rot[sID], id)
+			rot.Rot[sID] = append(rot.Rot[sID], id)
 		} else {
-			rot.rot[id] = append(rot.rot[id], sID)
+			rot.Rot[id] = append(rot.Rot[id], sID)
 		}
 	}
 	if tot == nil {
@@ -204,19 +204,19 @@ func (t *Total) Inverse() *Total {
 	inv := &Total{
 		inverse: true,
 		pix:     t.pix,
-		stages:  make(map[int64]*rotation),
+		stages:  make(map[int64]*Rotation),
 	}
 
 	for _, a := range st {
-		rot := &rotation{
-			from: a,
-			to:   0,
-			rot:  make(map[int][]int),
+		rot := &Rotation{
+			From: a,
+			To:   0,
+			Rot:  make(map[int][]int),
 		}
 		tot := t.Rotation(a)
 		for id, v := range tot {
 			for _, px := range v {
-				rot.rot[px] = append(rot.rot[px], id)
+				rot.Rot[px] = append(rot.Rot[px], id)
 			}
 		}
 		inv.stages[a] = rot
@@ -260,7 +260,7 @@ func (t *Total) Rotation(age int64) map[int][]int {
 	age = t.ClosesStageAge(age)
 
 	rot := t.stages[age]
-	return rot.rot
+	return rot.Rot
 }
 
 // Stages return the time stages defined
@@ -269,10 +269,10 @@ func (t *Total) Stages() []int64 {
 	st := make([]int64, 0, len(t.stages))
 	for _, rot := range t.stages {
 		if t.inverse {
-			st = append(st, rot.from)
+			st = append(st, rot.From)
 			continue
 		}
-		st = append(st, rot.to)
+		st = append(st, rot.To)
 	}
 	slices.Sort(st)
 
@@ -281,17 +281,17 @@ func (t *Total) Stages() []int64 {
 
 // A Rotation is a rotation of a pixel
 // to another time stage.
-type rotation struct {
+type Rotation struct {
 	// Ages (in years) of the rotation
-	from int64
-	to   int64
+	From int64
+	To   int64
 
 	// pixels at 'from' time rotate to 'to' time
-	rot map[int][]int
+	Rot map[int][]int
 }
 
-func (r *rotation) removeDuplicates() {
-	for px, dest := range r.rot {
+func (r *Rotation) removeDuplicates() {
+	for px, dest := range r.Rot {
 		used := make(map[int]bool, len(dest))
 		for _, id := range dest {
 			used[id] = true
@@ -302,6 +302,6 @@ func (r *rotation) removeDuplicates() {
 			pix = append(pix, id)
 		}
 		slices.Sort(pix)
-		r.rot[px] = pix
+		r.Rot[px] = pix
 	}
 }

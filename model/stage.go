@@ -30,8 +30,8 @@ type StageRot struct {
 	// - OldToYoung contains the pixels at a given stage,
 	//	mapped to an slice of the destination pixels
 	//	in a posterior (youngest) stage.
-	youngToOld map[int64]*rotation
-	oldToYoung map[int64]*rotation
+	youngToOld map[int64]*Rotation
+	oldToYoung map[int64]*Rotation
 }
 
 // NewStageRot returns a collection of stage rotations
@@ -41,8 +41,8 @@ func NewStageRot(rec *Recons) *StageRot {
 
 	s := &StageRot{
 		pix:        rec.pix,
-		youngToOld: make(map[int64]*rotation),
-		oldToYoung: make(map[int64]*rotation),
+		youngToOld: make(map[int64]*Rotation),
+		oldToYoung: make(map[int64]*Rotation),
 	}
 
 	// make the stage rotations
@@ -67,16 +67,16 @@ func NewStageRot(rec *Recons) *StageRot {
 			// to a younger stage
 			o2y, ok := s.oldToYoung[a]
 			if !ok {
-				o2y = &rotation{
-					from: a,
-					to:   y,
-					rot:  make(map[int][]int),
+				o2y = &Rotation{
+					From: a,
+					To:   y,
+					Rot:  make(map[int][]int),
 				}
 				s.oldToYoung[a] = o2y
 			}
 			for pp, v := range old {
 				for _, px := range v {
-					o2y.rot[px] = append(o2y.rot[px], young[pp]...)
+					o2y.Rot[px] = append(o2y.Rot[px], young[pp]...)
 				}
 			}
 
@@ -84,16 +84,16 @@ func NewStageRot(rec *Recons) *StageRot {
 			// to an older stage
 			y2o, ok := s.youngToOld[y]
 			if !ok {
-				y2o = &rotation{
-					from: y,
-					to:   a,
-					rot:  make(map[int][]int),
+				y2o = &Rotation{
+					From: y,
+					To:   a,
+					Rot:  make(map[int][]int),
 				}
 				s.youngToOld[y] = y2o
 			}
 			for pp, v := range young {
 				for _, px := range v {
-					y2o.rot[px] = append(y2o.rot[px], old[pp]...)
+					y2o.Rot[px] = append(y2o.Rot[px], old[pp]...)
 				}
 			}
 		}
@@ -160,27 +160,14 @@ func (s *StageRot) CloserStageAge(age int64) int64 {
 
 // OldToYoung returns an stage rotation from an older stage
 // to it most immediate younger stage.
-// The stage rotation is represented by pixels at the older stage
-// mapped to one or more corresponding pixels at the younger stage.
 // If there is no younger stage,
 // it will return a nil map.
-func (s *StageRot) OldToYoung(oldStage int64) map[int][]int {
+func (s *StageRot) OldToYoung(oldStage int64) *Rotation {
 	o2y, ok := s.oldToYoung[oldStage]
 	if !ok {
 		return nil
 	}
-	return o2y.rot
-}
-
-// OldAge returns the age of oldest stage in a young to old rotation.
-// If no younger stage is defined for the given age,
-// then -1 will be returned.
-func (s *StageRot) OldAge(youngStage int64) int64 {
-	y2o, ok := s.youngToOld[youngStage]
-	if !ok {
-		return -1
-	}
-	return y2o.to
+	return o2y
 }
 
 // Stages return the time stages defined
@@ -204,25 +191,12 @@ func (s *StageRot) Stages() []int64 {
 
 // YoungToOld returns an stage rotation from a younger stage
 // to it most immediate older stage.
-// The stage rotation is represented by pixels at the younger stage
-// mapped to one or more corresponding pixels at the older stage.
 // If there is no older stage,
 // it will return a nil map.
-func (s *StageRot) YoungToOld(youngStage int64) map[int][]int {
+func (s *StageRot) YoungToOld(youngStage int64) *Rotation {
 	y2o, ok := s.youngToOld[youngStage]
 	if !ok {
 		return nil
 	}
-	return y2o.rot
-}
-
-// YoungAge returns the age of youngest stage in an old to young rotation.
-// If no old stage is defined for the given age,
-// then -1 will be returned.
-func (s *StageRot) YoungAge(oldStage int64) int64 {
-	o2y, ok := s.oldToYoung[oldStage]
-	if !ok {
-		return -1
-	}
-	return o2y.to
+	return y2o
 }
