@@ -148,6 +148,12 @@ func (pix *Pixelation) Random() Pixel {
 	return pix.pixels[id]
 }
 
+// RandInRing returns a random pixel at a given ring.
+func (pix *Pixelation) RandInRing(ring int) Pixel {
+	id := pix.rings[ring] + rand.Intn(pix.perRing[ring])
+	return pix.pixels[id]
+}
+
 // RingLat returns the latitude of a ring.
 func (pix *Pixelation) RingLat(ring int) float64 {
 	px := pix.pixels[pix.rings[ring]]
@@ -162,7 +168,7 @@ func (pix *Pixelation) Rings() int {
 // Step returns the size of a pixel
 // at equator
 // or its latitude size.
-func(pix *Pixelation) Step() float64 {
+func (pix *Pixelation) Step() float64 {
 	return pix.dStep
 }
 

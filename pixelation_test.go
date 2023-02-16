@@ -229,3 +229,17 @@ func TestPixelationRings(t *testing.T) {
 		}
 	}
 }
+
+func TestRandInRing(t *testing.T) {
+	eq := 360
+	pix := earth.NewPixelation(eq)
+
+	for r := 0; r < pix.Rings(); r++ {
+		for i := 0; i < 1000; i++ {
+			rp := pix.RandInRing(r)
+			if rp.Ring() != r {
+				t.Errorf("ring %d: pixel %d, got %d", r, rp.ID(), rp.Ring())
+			}
+		}
+	}
+}
