@@ -22,7 +22,7 @@ import (
 )
 
 var Command = &command.Command{
-	Usage: `map [-c|--columns <value>]
+	Usage: `map [-c|--columns <value>] [--mask]
 	-o|--output <out-img-file> [<pix-file>...]`,
 	Short: "draw a map from a file with pixelated plates",
 	Long: `
@@ -31,9 +31,9 @@ a png image using a plate carrée (equirectangular) projection.
 
 The flag --output, or -o, is required, and indicates the name of the file of
 the output image. In the image all pixels associated with a plate will have
-the same color (selected at random). By default the image will be 3600 pixels
-wide, use the flag --column, or -c, to define a different number of image
-columns.
+the same color (selected at random). If --mask flag is defined, the output
+will be a mask-like image. By default the image will be 3600 pixels wide, use
+the flag --column, or -c, to define a different number of image columns.
 
 One or more input files can be given as arguments. If no file is given the
 input will be read from the standard input.
@@ -42,10 +42,12 @@ input will be read from the standard input.
 	Run:      run,
 }
 
+var maskFlag bool
 var colsFlag int
 var output string
 
 func setFlags(c *command.Command) {
+	c.Flags().BoolVar(&maskFlag, "mask", false, "")
 	c.Flags().IntVar(&colsFlag, "columns", 3600, "")
 	c.Flags().IntVar(&colsFlag, "c", 3600, "")
 	c.Flags().StringVar(&output, "output", "", "")
@@ -141,7 +143,13 @@ func (m *mapImg) At(x, y int) color.Color {
 	pos := m.pix.Pixel(lat, lon).ID()
 	pp, ok := m.pp[pos]
 	if !ok {
+		if maskFlag {
+			return color.RGBA{0, 0, 0, 255}
+		}
 		return color.RGBA{0, 0, 0, 0}
+	}
+	if maskFlag {
+		return color.RGBA{255, 255, 255, 255}
 	}
 	if c, ok := m.color[pp.plate]; ok {
 		return c
