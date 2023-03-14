@@ -36,6 +36,53 @@ func TestTimePix(t *testing.T) {
 	testTimePix(t, np)
 }
 
+func TestTimePixDelete(t *testing.T) {
+	data := makeRecons(t)
+	tot := model.NewTotal(data)
+
+	tp := model.NewTimePix(tot.Pixelation())
+	setStage(tp, tot, 100_000_000)
+	setStage(tp, tot, 140_000_000)
+
+	age := int64(100_000_000)
+
+	tp.Del(age, 19409)
+	tp.Del(age, 8000)
+
+	vals100 := map[int]int{
+		15000: 0,
+		19051: 1,
+		19055: 1,
+		19409: 0,
+		19766: 1,
+		20122: 1,
+		20479: 1,
+		20480: 1,
+	}
+
+	for id, x := range vals100 {
+		v, ok := tp.At(age, id)
+		if !ok {
+			t.Errorf("time %d: pixel %d: not found, want %d", age, id, x)
+		}
+		if v != x {
+			t.Errorf("time %d: pixel %d: got %d, want %d", age, id, v, x)
+		}
+	}
+
+	st100 := map[int]int{
+		19051: 1,
+		19055: 1,
+		19766: 1,
+		20122: 1,
+		20479: 1,
+		20480: 1,
+	}
+	if st := tp.Stage(age); !reflect.DeepEqual(st, st100) {
+		t.Errorf("stage at 100_000_000: got %v, want %v", st, st100)
+	}
+}
+
 func setStage(tp *model.TimePix, tot *model.Total, age int64) {
 	st := tot.Rotation(age)
 	for _, ids := range st {

@@ -85,6 +85,20 @@ func (tp *TimePix) CloserStageAge(age int64) int64 {
 	return age
 }
 
+// Del removes a pixel value at a time
+// in a time pixelation.
+func (tp *TimePix) Del(age int64, pixel int) {
+	if pixel >= tp.pix.Len() {
+		return
+	}
+
+	st, ok := tp.stages[age]
+	if !ok {
+		return
+	}
+	delete(st.values, pixel)
+}
+
 // Pixelation returns the underlying isolatitude pixelation.
 func (tp *TimePix) Pixelation() *earth.Pixelation {
 	return tp.pix
