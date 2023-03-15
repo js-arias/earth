@@ -154,14 +154,14 @@ func testTimePix(t testing.TB, tp *model.TimePix) {
 		}
 	}
 
-	if a := tp.CloserStageAge(150_000_000); a != 140_000_000 {
-		t.Errorf("closer stage at 150_000_000: got %d, want %d", a, 140_000_000)
+	if a := tp.ClosestStageAge(150_000_000); a != 140_000_000 {
+		t.Errorf("closest stage at 150_000_000: got %d, want %d", a, 140_000_000)
 	}
 
 	for id, x := range vals140 {
-		v := tp.AtCloser(age, id)
+		v := tp.AtClosest(age, id)
 		if v != x {
-			t.Errorf("time closer %d (%d): pixel %d: got %d, want %d", age, tp.CloserStageAge(age), id, v, x)
+			t.Errorf("time closest %d (%d): pixel %d: got %d, want %d", age, tp.ClosestStageAge(age), id, v, x)
 		}
 	}
 

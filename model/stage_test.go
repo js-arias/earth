@@ -74,7 +74,7 @@ func testStageRot(t testing.TB, stg *model.StageRot) {
 		t.Errorf("old to young: got %v, want %v", o2y, pix140to100)
 	}
 
-	if c := stg.CloserStageAge(125_000_000); c != 100_000_000 {
-		t.Errorf("closer stage age: got %d, want %d", c, 100_000_000)
+	if c := stg.ClosestStageAge(125_000_000); c != 100_000_000 {
+		t.Errorf("closest stage age: got %d, want %d", c, 100_000_000)
 	}
 }

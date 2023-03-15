@@ -182,12 +182,12 @@ func ReadTotal(r io.Reader, pix *earth.Pixelation, inverse bool) (*Total, error)
 	return tot, nil
 }
 
-// ClosesStageAge returns the closer stage age
+// ClosestStageAge returns the closest stage age
 // for a given time age
 // (i.e. the age of the oldest time stage
 // that is youngest than the given age).
 // This stage age is the one used by Rotation method.
-func (t *Total) ClosesStageAge(age int64) int64 {
+func (t *Total) ClosestStageAge(age int64) int64 {
 	st := t.Stages()
 	if i, ok := slices.BinarySearch(st, age); !ok {
 		age = st[i-1]
@@ -257,7 +257,7 @@ func (t *Total) Pixelation() *earth.Pixelation {
 // if asked for the stage 19_843_211
 // it will return the pixel locations at 10_000_000.
 func (t *Total) Rotation(age int64) map[int][]int {
-	age = t.ClosesStageAge(age)
+	age = t.ClosestStageAge(age)
 
 	rot := t.stages[age]
 	return rot.Rot

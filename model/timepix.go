@@ -61,23 +61,23 @@ func (tp *TimePix) At(age int64, pixel int) (int, bool) {
 	return v, true
 }
 
-// AtCloser returns the value for a pixel at the closer time stage
+// AtClosest returns the value for a pixel at the closest time stage
 // (i.e. the age of the oldest stage
 // younger than the indicated age).
 // If the pixel was never defined,
 // it will return the default value
 // (i.e. 0).
-func (tp *TimePix) AtCloser(age int64, pixel int) int {
-	age = tp.CloserStageAge(age)
+func (tp *TimePix) AtClosest(age int64, pixel int) int {
+	age = tp.ClosestStageAge(age)
 	v, _ := tp.At(age, pixel)
 	return v
 }
 
-// CloserStageAge returns the closer stage age
+// ClosestStageAge returns the closest stage age
 // for a time
 // (i.e. the age of the oldest stage
 // younger than the indicated age).
-func (tp *TimePix) CloserStageAge(age int64) int64 {
+func (tp *TimePix) ClosestStageAge(age int64) int64 {
 	st := tp.Stages()
 	if i, ok := slices.BinarySearch(st, age); !ok {
 		age = st[i-1]

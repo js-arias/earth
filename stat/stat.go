@@ -42,7 +42,7 @@ type QuantileChord2er interface {
 // and a bound for the CDF of the distribution
 // (i.e. pixels outside the indicated CDF in d will be ignored).
 func KDE(d QuantileChord2er, p map[int]float64, tp *model.TimePix, age int64, prior pixprob.Pixel, bound float64) map[int]float64 {
-	age = tp.CloserStageAge(age)
+	age = tp.ClosestStageAge(age)
 
 	maxChord2 := d.QuantileChord2(bound)
 	density := make(map[int]float64)

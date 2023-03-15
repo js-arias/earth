@@ -101,7 +101,7 @@ func run(c *command.Command, args []string) error {
 	}
 	var ages []int64
 	if atFlag >= 0 {
-		ages = []int64{tp.CloserStageAge(int64(atFlag * millionYears))}
+		ages = []int64{tp.ClosestStageAge(int64(atFlag * millionYears))}
 	} else {
 		ages = tp.Stages()
 	}

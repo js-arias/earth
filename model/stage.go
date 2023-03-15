@@ -147,10 +147,10 @@ func ReadStageRot(r io.Reader, pix *earth.Pixelation) (*StageRot, error) {
 	return NewStageRot(rec), nil
 }
 
-// CloserStageAge returns the closer stage age
+// ClosestStageAge returns the closest stage age
 // for a given time
 // i.e. the age of the first time stage younger than the given age.
-func (s *StageRot) CloserStageAge(age int64) int64 {
+func (s *StageRot) ClosestStageAge(age int64) int64 {
 	st := s.Stages()
 	if i, ok := slices.BinarySearch(st, age); !ok {
 		age = st[i-1]
