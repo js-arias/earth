@@ -126,3 +126,25 @@ func Bearing(p, q Point) float64 {
 	}
 	return b
 }
+
+// Destination returns the destination point
+// of a trip starting at point p,
+// given a bearing and a distance
+// (in radians).
+func Destination(p Point, dist, bearing float64) Point {
+	pLat := ToRad(p.lat)
+
+	sinLat := math.Sin(pLat)*math.Cos(dist) + math.Cos(pLat)*math.Sin(dist)*math.Cos(bearing)
+	rLat := math.Asin(sinLat)
+	tanLonX := math.Sin(bearing) * math.Sin(dist) * math.Cos(pLat)
+	tanLonY := math.Cos(dist) - math.Sin(pLat)*math.Sin(rLat)
+	lon := p.lon + ToDegree(math.Atan2(tanLonX, tanLonY))
+	if lon > 180 {
+		lon = lon - 360
+	}
+	if lon < -180 {
+		lon = 360 + lon
+	}
+
+	return NewPoint(ToDegree(rLat), lon)
+}

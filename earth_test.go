@@ -114,3 +114,52 @@ func TestBearing(t *testing.T) {
 		})
 	}
 }
+
+func TestDestination(t *testing.T) {
+	tests := map[string]struct {
+		p1, p2 earth.Point
+	}{
+		"Kansas - St. Louis": {
+			p1: earth.NewPoint(39.099912, -94.581213),
+			p2: earth.NewPoint(38.627089, -90.200203),
+		},
+		"Tasmania - Tucuman": {
+			p1: earth.NewPoint(-42, 147),
+			p2: earth.NewPoint(-26, -65),
+		},
+		"Tasmania - Cairo": {
+			p1: earth.NewPoint(-42, 147),
+			p2: earth.NewPoint(30, 31),
+		},
+		"Tasmania - Los Angeles": {
+			p1: earth.NewPoint(-42, 147),
+			p2: earth.NewPoint(34, -118),
+		},
+		"Tasmania - Beijing": {
+			p1: earth.NewPoint(-42, 147),
+			p2: earth.NewPoint(39, 116),
+		},
+		"Tasmania - Maputo": {
+			p1: earth.NewPoint(-42, 147),
+			p2: earth.NewPoint(-25, 32),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			dist := earth.Distance(test.p1, test.p2)
+			b := earth.Bearing(test.p1, test.p2)
+
+			got := earth.Destination(test.p1, dist, b)
+
+			d := earth.Distance(test.p2, got)
+			if math.IsNaN(d) {
+				t.Errorf("%s: NaN distance, want %.6f", name, 0.0)
+			}
+			if d > 0.01 {
+				t.Errorf("%s: got %v, want %v [distance = %.6f]", name, got, test.p2, d)
+			}
+		})
+	}
+
+}
