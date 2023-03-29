@@ -37,6 +37,8 @@ type Normal struct {
 	step   float64 // step of a ring in radians
 	lambda float64 // concentration parameter
 
+	maxRing float64 // maximum ring probability
+
 	pdf    []float64
 	cdf    []float64
 	ring   []float64
@@ -70,23 +72,30 @@ func NewNormal(lambda float64, pix *earth.Pixelation) Normal {
 	}
 
 	// scale values
+	var maxRing float64
 	pdf := make([]float64, rings)
 	logSum := math.Log(sum)
 	for i := range logPDF {
-		ring[i] = ring[i] / sum
+		r := ring[i] / sum
+		ring[i] = r
+		if r > maxRing {
+			maxRing = r
+		}
+
 		cdf[i] = cdf[i] / sum
 		logPDF[i] = logPDF[i] - logSum
 		pdf[i] = math.Exp(logPDF[i])
 	}
 
 	return Normal{
-		pix:    pix,
-		step:   rStep,
-		lambda: lambda,
-		pdf:    pdf,
-		cdf:    cdf,
-		ring:   ring,
-		logPDF: logPDF,
+		pix:     pix,
+		step:    rStep,
+		lambda:  lambda,
+		maxRing: maxRing,
+		pdf:     pdf,
+		cdf:     cdf,
+		ring:    ring,
+		logPDF:  logPDF,
 	}
 }
 
@@ -155,24 +164,38 @@ func (n Normal) Prob(dist float64) float64 {
 // from the underlying pixelation
 // draw from an spherical normal
 // which mean is the pixel u.
-//
-// It use a simple rejection-sampling algorithm
-// based on an uniform distribution,
-// therefore,
-// as the concentration increase,
-// the algorithm will be slower.
 func (n Normal) Rand(u earth.Pixel) earth.Pixel {
 	uPt := u.Point()
-	logP := n.logPDF[0]
-	for {
-		tp := n.pix.Random()
-		dist := earth.Distance(uPt, tp.Point())
 
-		logT := n.LogProb(dist)
-		accept := math.Exp(logT - logP)
-		if rand.Float64() < accept {
-			return tp
+	// For small lambda values
+	// sample from an uniform distribution over the globe.
+	// The limit was found empirically
+	if n.lambda <= 8 {
+		logP := n.logPDF[0]
+		for {
+			tp := n.pix.Random()
+			dist := earth.Distance(uPt, tp.Point())
+
+			logT := n.LogProb(dist)
+			accept := math.Exp(logT - logP)
+			if rand.Float64() < accept {
+				return tp
+			}
 		}
+	}
+
+	// for large lambda values
+	// sample using the radius
+	for {
+		dist := rand.Float64() * math.Pi
+		p := n.Ring(dist) / n.maxRing
+		if rand.Float64() >= p {
+			continue
+		}
+
+		b := rand.Float64() * 2 * math.Pi
+		pt := earth.Destination(uPt, dist, b)
+		return n.pix.Pixel(pt.Latitude(), pt.Longitude())
 	}
 }
 
