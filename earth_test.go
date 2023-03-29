@@ -63,3 +63,54 @@ func TestPointDistance(t *testing.T) {
 		})
 	}
 }
+
+func TestBearing(t *testing.T) {
+	tests := map[string]struct {
+		p1, p2  earth.Point
+		bearing float64
+	}{
+		"Kansas - St. Louis": {
+			p1:      earth.NewPoint(39.099912, -94.581213),
+			p2:      earth.NewPoint(38.627089, -90.200203),
+			bearing: 1.684463,
+		},
+		"Tasmania - Tucuman": {
+			p1:      earth.NewPoint(-42, 147),
+			p2:      earth.NewPoint(-26, -65),
+			bearing: 2.623630,
+		},
+		"Tasmania - Cairo": {
+			p1:      earth.NewPoint(-42, 147),
+			p2:      earth.NewPoint(30, 31),
+			bearing: 4.862267,
+		},
+		"Tasmania - Los Angeles": {
+			p1:      earth.NewPoint(-42, 147),
+			p2:      earth.NewPoint(34, -118),
+			bearing: 1.152416,
+		},
+		"Tasmania - Beijing": {
+			p1:      earth.NewPoint(-42, 147),
+			p2:      earth.NewPoint(39, 116),
+			bearing: 5.870185,
+		},
+		"Tasmania - Maputo": {
+			p1:      earth.NewPoint(-42, 147),
+			p2:      earth.NewPoint(-25, 32),
+			bearing: 4.105445,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := earth.Bearing(test.p1, test.p2)
+			diff := got - test.bearing
+			if diff < 0 {
+				diff = -diff
+			}
+			if diff > 0.1 {
+				t.Errorf("%s: got %.6f, want %.6f (error = %.6f rad)", name, got, test.bearing, diff)
+			}
+		})
+	}
+}

@@ -103,3 +103,26 @@ func Distance(p, q Point) float64 {
 	}
 	return math.Acos(dot)
 }
+
+// Bearing returns the direction angle
+// between a meridian and the great circle line
+// that connect two points,
+// from the point p.
+// The resulting angle is in radians,
+// 0 being north,
+// pi/2 east,
+// pi south,
+// and 3pi/2 west,
+func Bearing(p, q Point) float64 {
+	pLat := ToRad(p.lat)
+	qLat := ToRad(q.lat)
+	dLon := ToRad(q.lon) - ToRad(p.lon)
+	x := math.Cos(qLat) * math.Sin(dLon)
+	y := math.Cos(pLat)*math.Sin(qLat) - math.Sin(pLat)*math.Cos(qLat)*math.Cos(dLon)
+
+	b := math.Atan2(x, y)
+	if b < 0 {
+		b = 2*math.Pi + b
+	}
+	return b
+}
