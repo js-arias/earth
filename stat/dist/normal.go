@@ -30,7 +30,7 @@ func init() {
 // where x and u are points on a sphere,
 // u is the mean,
 // λ is the concentration parameter
-// (in 1/radians),
+// (in 1/radians^2),
 // and gcd is the great circle distance.
 type Normal struct {
 	pix    *earth.Pixelation
@@ -47,7 +47,7 @@ type Normal struct {
 
 // NewNormal returns a discretized spherical normal,
 // using lambda as the concentration parameter
-// (in 1/radian units)
+// (in 1/radian^2 units)
 // and using pix as the underlying pixelation.
 func NewNormal(lambda float64, pix *earth.Pixelation) Normal {
 	rings := pix.Rings()
@@ -125,7 +125,7 @@ func (n Normal) QuantileChord2(cd float64) float64 {
 }
 
 // Lambda returns the concentration parameter
-// (in 1/radians)
+// (in 1/radians^2)
 // of a normal distribution.
 func (n Normal) Lambda() float64 {
 	return n.lambda
