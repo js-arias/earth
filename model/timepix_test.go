@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/js-arias/earth"
 	"github.com/js-arias/earth/model"
 )
 
@@ -102,6 +103,15 @@ func testTimePix(t testing.TB, tp *model.TimePix) {
 	stages := []int64{100_000_000, 140_000_000}
 	if st := tp.Stages(); !reflect.DeepEqual(st, stages) {
 		t.Errorf("stages: got %v, want %v", st, stages)
+	}
+	if o, y := tp.Bounds(100_000_000); y < 100_000_000 || o > 140_000_000 {
+		t.Errorf("bounds: at %d, got %d-%d, want %d-%d", 100_000_000, o, y, 140_000_000, 100_000_000)
+	}
+	if o, y := tp.Bounds(125_000_000); y < 100_000_000 || o > 140_000_000 {
+		t.Errorf("bounds: at %d, got %d-%d, want %d-%d", 125_000_000, o, y, 140_000_000, 100_000_000)
+	}
+	if o, y := tp.Bounds(145_000_000); y < 140_000_000 || o > earth.Age {
+		t.Errorf("bounds: at %d, got %d-%d, want %d-%d", 145_000_000, o, y, earth.Age, 140_000_000)
 	}
 
 	vals100 := map[int]int{

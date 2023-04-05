@@ -73,6 +73,20 @@ func (tp *TimePix) AtClosest(age int64, pixel int) int {
 	return v
 }
 
+// Bounds return the age bounds for the stage of the given age
+// in million years.
+func (tp *TimePix) Bounds(age int64) (old, young int64) {
+	st := tp.Stages()
+	i, ok := slices.BinarySearch(st, age)
+	if !ok {
+		i = i - 1
+	}
+	if i+1 >= len(st) {
+		return earth.Age, st[i]
+	}
+	return st[i+1], st[i]
+}
+
 // ClosestStageAge returns the closest stage age
 // for a time
 // (i.e. the age of the oldest stage
