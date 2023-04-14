@@ -15,11 +15,14 @@ import (
 
 	"github.com/js-arias/earth"
 	"github.com/js-arias/earth/stat/dist"
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/vg"
 )
 
 const equatorPixels = 360
 const simulations = 1_000_000
-const lambda = 10
+const lambda = 120
 
 func main() {
 	pix := earth.NewPixelation(equatorPixels)
@@ -28,10 +31,12 @@ func main() {
 
 	// simulate the points
 	pts := make(map[int]float64, pix.Len())
+	vals := make(plotter.Values, simulations)
 	t := time.Now()
 	for p := 0; p < simulations; p++ {
 		px := n.Rand(pt)
 		pts[px.ID()]++
+		vals[p] = earth.Distance(pt.Point(), px.Point())
 	}
 	fmt.Fprintf(os.Stdout, "simulation time: %v\n", time.Since(t))
 
@@ -49,6 +54,32 @@ func main() {
 		pts:  pts,
 	}
 	if err := writeImage("rnd-pts.png", &img); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+
+	p := plot.New()
+	p.X.Label.Text = "distance"
+	p.Y.Label.Text = "frequency"
+	h, err := plotter.NewHist(vals, 50)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+	p.Add(h)
+
+	fn := plotter.NewFunction(func(f float64) float64 {
+		// scale the function to be equivalent
+		// to the histogram scale
+		scale := 50 * h.Width * simulations
+		return n.Ring(f) * scale
+	})
+	fn.Color = color.RGBA{R: 255, A: 255}
+	fn.Width = vg.Points(2)
+	p.Add(fn)
+
+	// Save the plot to a PNG file.
+	if err := p.Save(4*vg.Inch, 4*vg.Inch, "dist.png"); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
