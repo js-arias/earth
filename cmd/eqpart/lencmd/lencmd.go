@@ -3,7 +3,7 @@
 // Distributed under BSD2 license that can be found in the LICENSE file.
 
 // Package lencmd implements a command to get the number of pixels
-// in an isolatitude pixelation.
+// in a pixelation based on equal area partitioning.
 package lencmd
 
 import (
@@ -23,9 +23,9 @@ var Command = &command.Command{
 	Usage: "len [-e|--equator <value>] [--box <lat,lon,lat,lon>] [--rings]",
 	Short: "get the number of pixels in a pixelation",
 	Long: `
-Command len retrieves the number of pixels produced by an isolatitude
-pixelation with the given number of pixels at the equator, as well as the
-number of isolatitude rings.
+Command len retrieves the number of pixels produced by a pixelation based on
+an equal area partitioning of a sphere with the given number of pixels at the
+equator, as well as the number of isolatitude rings.
 
 By default the pixelation will be of 360 pixels at the equator. Use the flag
 --equator, or -e, to define a different pixelation.

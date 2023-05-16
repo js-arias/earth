@@ -31,10 +31,11 @@ var Command = &command.Command{
 	[--box <lat,lon,lat,lon>] [--mask <image>]
 	[--points] [--pixels] [--random <value>]
 	[--bg <image>] -o|--output <out-img-file>`,
-	Short: "draw a map of an isolatitude pixelation",
+	Short: "draw a map of a pixelation",
 	Long: `
-Package map draws the pixels of an isolatitude pixelation into an image file
-using a plate carrée (equirectangular) projection.
+Package map draws the pixels of pixelation based on an equal area partitioning
+of a sphere into an image file using a plate carrée (equirectangular)
+projection.
 
 By default the pixelation will have 360 pixels in the equator. Use the flag
 --equator, or -e, to change the size of the pixelation.

@@ -3,7 +3,7 @@
 // Distributed under BSD2 license that can be found in the LICENSE file.
 
 // Package pixel implements a command to get the a pixel location
-// in an isolatitude pixelation.
+// in a pixelation based on an equal area partitioning.
 package pixel
 
 import (
@@ -23,8 +23,8 @@ var Command = &command.Command{
 	Usage: "pixel [-e|--equator <value>] [--id] [<value>...]",
 	Short: "get pixel location",
 	Long: `
-Command pixel retrieves a pixel location for one or more values given as
-arguments.
+Command pixel retrieves a pixel location in a pixelation based on an equal
+area partitioning of a sphere for one or more values given as arguments.
 
 Values to be retrieved will be read as arguments. If no argument is given then
 values will be read from the standard input, one value per line, ignoring lines
