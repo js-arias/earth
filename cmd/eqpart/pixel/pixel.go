@@ -34,7 +34,7 @@ By default the values are reads as coordinates, with the first argument being
 the latitude and the second the latitude. Note that they must be separated
 arguments. If the first latitude is negative use "--" before the value
 (otherwise the value will be interpreted as a flag). For coordinates the pixel
-ID in the isolatitude pixelation will be retrieved. If the flag --id is
+ID in the equal area pixelation will be retrieved. If the flag --id is
 defined, then values will be read as pixel IDs in the pixelation, and the
 geographic coordinates of the central point of the pixel will be retrieved.
 

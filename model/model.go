@@ -3,7 +3,7 @@
 // Distributed under BSD2 license that can be found in the LICENSE file.
 
 // Package model implements paleogeographic reconstruction models
-// using an isolatitude pixelation
+// using a pixelation based on an equal area pixelation
 // and discrete time stages.
 //
 // There are different model types depending
@@ -30,7 +30,7 @@ import (
 )
 
 // A Recons is an editable tectonic reconstruction model
-// based on an isolatitude pixelation
+// based on an equal area pixelation
 // and using discrete time stages.
 //
 // The model is based on tectonic plates
@@ -106,7 +106,7 @@ func (rec *Recons) Add(plate int, locations map[int][]int, age int64) {
 	}
 }
 
-// Pixelation returns the underlying isolatitude pixelation
+// Pixelation returns the underlying equal area pixelation
 // of the model.
 func (rec *Recons) Pixelation() *earth.Pixelation {
 	return rec.pix
@@ -235,7 +235,7 @@ var recHeader = []string{
 //
 //   - equator, for the number of pixels at the equator
 //   - plate, the ID of a tectonic plate
-//   - pixel, the ID of a pixel (in an isolatitude pixelation)
+//   - pixel, the ID of a pixel (in an equal area pixelation)
 //   - age, the age of the time stage (in years)
 //   - stage-pixel, the pixel ID at the time stage
 //

@@ -33,7 +33,7 @@ type TimePix struct {
 }
 
 // NewTimePix returns a new time pixelation
-// based on an isolatitude pixelation.
+// based on an equal area pixelation.
 func NewTimePix(pix *earth.Pixelation) *TimePix {
 	return &TimePix{
 		pix:    pix,
@@ -113,7 +113,7 @@ func (tp *TimePix) Del(age int64, pixel int) {
 	delete(st.values, pixel)
 }
 
-// Pixelation returns the underlying isolatitude pixelation.
+// Pixelation returns the underlying equal area pixelation.
 func (tp *TimePix) Pixelation() *earth.Pixelation {
 	return tp.pix
 }

@@ -41,7 +41,7 @@ By default the pixelation will have 360 pixels in the equator. Use the flag
 --equator, or -e, to change the size of the pixelation.
 
 The flag --output, or -o, is required, and indicates the name of the file of
-the output image. In the image each pixel in the isolatitude pixelation will
+the output image. In the image each pixel in the equal area pixelation will
 have the same color (selected at random). By default the image will be 3600
 pixels wide, use the flag --column, or -c, to define a different number of
 image columns.
