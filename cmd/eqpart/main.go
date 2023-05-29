@@ -2,19 +2,19 @@
 // All rights reserved.
 // Distributed under BSD2 license that can be found in the LICENSE file.
 
-// IsoLat is a tool to work with isolatitude pixelations.
+// EqPart is a tool to work with a pixelation based on an equal area partitioning.
 package main
 
 import (
 	"github.com/js-arias/command"
-	"github.com/js-arias/earth/cmd/isolat/lencmd"
-	"github.com/js-arias/earth/cmd/isolat/mapcmd"
-	"github.com/js-arias/earth/cmd/isolat/pixel"
+	"github.com/js-arias/earth/cmd/eqpart/lencmd"
+	"github.com/js-arias/earth/cmd/eqpart/mapcmd"
+	"github.com/js-arias/earth/cmd/eqpart/pixel"
 )
 
 var app = &command.Command{
-	Usage: "isolat <command> [<argument>...]",
-	Short: "a toll to work with isolatitude pixelations",
+	Usage: "eqpart <command> [<argument>...]",
+	Short: "a tool to work with pixelation based on an equal area partitioning",
 }
 
 func init() {
