@@ -4,7 +4,7 @@
 
 // Package importcmd implements a command to import features
 // from a GPlates GPML file
-// into an isolatitude pixelation.
+// into an equal area pixelation.
 package importcmd
 
 import (
@@ -25,37 +25,38 @@ var Command = &command.Command{
 	[--cpu <value>] [-o|--output <file>] [<gpml-file>...]`,
 	Short: "import GPML files",
 	Long: `
-Command import reads one or more GPML encoded GPlates files and import them
+Import reads one or more GPML encoded GPlates files and imports them
 into an equal area pixelation.
 
-The GPML format is an implementation of the XML format for tectonic plates
-modelling, and is the main format used by GPlates software
-(<https://www.gplates.org>). For a formal description of GPML format see:
+The GPML format is an implementation of the XML format for tectonic plate
+modeling, primarily used by GPlates software (<https://www.gplates.org>). For
+a formal description of the GPML format, refer to:
 <https://www.gplates.org/docs/gpgim/>.
 
-One or more input files can be given as arguments. If no files are given the
-input will be read from the standard input.
+One or more input files can be given as arguments. If no files are specified,
+the input will be read from the standard input.
 
-By default the new pixelation will have 360 pixels at the equator (i.e. a one
-degree pixelation). This can be changed with the flag --equator or -e.
+By default, the new pixelation will have 360 pixels at the equator (i.e., a
+one-degree pixelation). To change the number of pixels, use the --equator
+or -e flag.
 
-By default, all features will be pixelated. With the flag --at, only features
-that exists at the indicated time (in million years) will be imported.
+By default, all features will be pixelated. Use the --at flag to import only
+features that existed at the specified time (in million years).
 
-The resulting pixelation will be written into the standard output. Use the
-flag --output, or -o, to define an output file.
+The resulting pixelation will be written to the standard output. Use the
+--output or -o flag to specify an output file.
 
 The output file is a tab-delimited value file with the following columns:
 
-	- equator, for the number of pixels at the equator
-	- plate, the ID of a tectonic plate
-	- pixel, the ID of a pixel (from an isolatitude pixelation)
-	- name, the name of a tectonic feature
-	- begin, the oldest age of the pixel (in years)
-	- end, the youngest age of the pixel (in years)
+	- equator: the number of pixels at the equator
+	- plate:   the ID of a tectonic plate
+	- pixel:   the ID of a pixel (from an isolatitude pixelation)
+	- name:    the name of a tectonic feature
+	- begin:   the oldest age of the pixel (in years)
+	- end:     the youngest age of the pixel (in years)
 
-By default, the process will be done concurrently using all available CPU
-processors. Use the flag --cpu to set the number of processors used.
+By default, the import process will utilize all available CPU processors
+concurrently. Use the --cpu flag to set the number of used processors.
 	`,
 	SetFlags: setFlags,
 	Run:      run,
