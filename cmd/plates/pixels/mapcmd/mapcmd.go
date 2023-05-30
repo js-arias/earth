@@ -26,16 +26,16 @@ var Command = &command.Command{
 	-o|--output <out-img-file> [<pix-file>...]`,
 	Short: "draw a map from a file with pixelated plates",
 	Long: `
-Command map reads one or more pixelated plates files and draw the plates into
-a png image using a plate carrée (equirectangular) projection.
+Map reads one or more pixelated plates files and generates a PNG image with
+the plates drawn using a plate carrée (equirectangular) projection.
 
-The flag --output, or -o, is required, and indicates the name of the file of
-the output image. In the image all pixels associated with a plate will have
-the same color (selected at random). If --mask flag is defined, the output
-will be a mask-like image. By default the image will be 3600 pixels wide, use
-the flag --column, or -c, to define a different number of image columns.
-
-One or more input files can be given as arguments. If no file is given the
+The --output or -o flag is required and specifies the name of the output image
+file. In the generated image, all pixels associated with a plate will have the
+same color, randomly selected. If the --mask flag is provided, the output will
+be a mask-like image. By default, the image will have a width of 3600 pixels.
+Use the --column or -c flag to specify a different number of image columns.	
+	
+One or more input files can be given as arguments. If no files are given, the
 input will be read from the standard input.
 	`,
 	SetFlags: setFlags,
