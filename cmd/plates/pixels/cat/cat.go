@@ -19,14 +19,14 @@ var Command = &command.Command{
 	Usage: "cat [-o|--output <file>] [<pix-file>...]",
 	Short: "merge plate pixelation files",
 	Long: `
-Command cat reads one or more pixelated plates files and merge them into a
-single plate pixelation file.
+Cat merge one or more pixelated plates files into a single plate pixelation
+file.
 
 One or more pixelated plates files can be given as arguments. If no files are
-given the input will be read from the standard input.
+given, the input will be read from the standard input.
 
-The resulted pixelation will be written into the standard output. Use the flag
---output, or -o, to define an output file.
+The resulting pixelation will be written to the standard output. Use the
+--output or -o flag to specify an output file.
 	`,
 	SetFlags: setFlags,
 	Run:      run,
