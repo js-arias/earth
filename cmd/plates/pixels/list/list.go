@@ -21,15 +21,14 @@ var Command = &command.Command{
 	Usage: "list [--len] [<pix-file>...]",
 	Short: "list plates from a file with pixelated plates",
 	Long: `
-Command list reads one or more pixelated plates files and prints the list of
-plates in that file, as well as the name of the features, and its time
-interval.
+List reads one or more pixelated plates files and prints a list of the plates,
+including the names of the features and their time intervals.
 
-One or more input files can be given as arguments. If no files are given the
+One or more input files can be given as arguments. If no files are given, the
 input will be read from the standard input.
-
-If the flag --len is defined, the number of pixels of each feature will be
-given.
+	
+If the --len flag is specified, it will print the number of pixels for each
+feature.
 	`,
 	SetFlags: setFlags,
 	Run:      run,
