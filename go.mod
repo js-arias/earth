@@ -3,6 +3,7 @@ module github.com/js-arias/earth
 go 1.19
 
 require (
+	github.com/js-arias/blind v0.0.0-20230607203834-ed164f849d5d
 	github.com/js-arias/command v0.0.0-20220321160405-bad66700a180
 	golang.org/x/exp v0.0.0-20220713135740-79cabaa25d75
 	golang.org/x/image v0.0.0-20220302094943-723b81ca9867

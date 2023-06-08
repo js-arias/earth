@@ -15,6 +15,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/js-arias/blind"
 	"github.com/js-arias/command"
 	"github.com/js-arias/earth"
 	"github.com/js-arias/earth/model"
@@ -146,7 +147,7 @@ func (m *mapImg) At(x, y int) color.Color {
 		if maskFlag {
 			return color.RGBA{0, 0, 0, 255}
 		}
-		return color.RGBA{0, 0, 0, 0}
+		return color.RGBA{153, 153, 153, 255}
 	}
 	if maskFlag {
 		return color.RGBA{255, 255, 255, 255}
@@ -155,7 +156,7 @@ func (m *mapImg) At(x, y int) color.Color {
 		return c
 	}
 
-	c := color.RGBA{randUint8(), randUint8(), randUint8(), 255}
+	c := randColor()
 	m.color[pp.plate] = c
 	return c
 }
@@ -183,8 +184,8 @@ func (m *mapImg) addPixels(pp *model.PixPlate) {
 	}
 }
 
-func randUint8() uint8 {
-	return uint8(rand.Intn(255))
+func randColor() color.RGBA {
+	return blind.Sequential(blind.Iridescent, rand.Float64())
 }
 
 func writeImage(name string, img *mapImg) (err error) {

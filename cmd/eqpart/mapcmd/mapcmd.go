@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/js-arias/blind"
 	"github.com/js-arias/command"
 	"github.com/js-arias/earth"
 	"github.com/js-arias/earth/vector"
@@ -265,13 +266,13 @@ func makeRndImage(pix *earth.Pixelation, mask image.Image, boxMask *box) *mapImg
 			}
 		}
 
-		img.color[id] = color.RGBA{randUint8(), randUint8(), randUint8(), 255}
+		img.color[id] = randColor()
 	}
 	return img
 }
 
-func randUint8() uint8 {
-	return uint8(rand.Intn(255))
+func randColor() color.RGBA {
+	return blind.Sequential(blind.Iridescent, rand.Float64())
 }
 
 func readImage(name string) (image.Image, error) {

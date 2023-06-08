@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/js-arias/blind"
 	"github.com/js-arias/command"
 	"github.com/js-arias/earth/model"
 	"golang.org/x/exp/rand"
@@ -50,13 +51,15 @@ required columns:
 
 Any other column will be ignored. Here is an example of a key file:
 
-	key	color	comment
-	0	0, 26, 51	deep ocean
-	1	0, 84, 119	oceanic plateaus
-	2	68, 167, 196	continental shelf
-	3	251, 236, 93	lowlands
-	4	255, 165, 0	highlands
-	5	229, 229, 224	ice sheets
+	key	color	gray	comment
+	0	54, 75, 154	255	deep ocean
+	1	74, 123, 183	235	oceanic plateaus
+	2	152, 202, 225	225	continental shelf
+	3	254, 218, 139	195	lowlands
+	4	246, 126, 75	185	highlands
+	5	231, 231, 231	245	ice sheets
+
+In this case, gray a comment columns will be ignored.
 
 By default the image will be 3600 pixels wide, use the flag --columns, or -c,
 to define a different number of image columns.
@@ -233,14 +236,14 @@ func makeKeyPalette(tp *model.TimePix, ages []int64) map[int]color.RGBA {
 			if _, ok := keys[v]; ok {
 				continue
 			}
-			keys[v] = color.RGBA{randUint8(), randUint8(), randUint8(), 255}
+			keys[v] = randColor()
 		}
 	}
 	return keys
 }
 
-func randUint8() uint8 {
-	return uint8(rand.Intn(255))
+func randColor() color.RGBA {
+	return blind.Sequential(blind.Iridescent, rand.Float64())
 }
 
 // A stagePix stores a time pixelation

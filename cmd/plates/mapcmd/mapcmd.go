@@ -14,6 +14,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/js-arias/blind"
 	"github.com/js-arias/command"
 	"github.com/js-arias/earth"
 	"github.com/js-arias/earth/model"
@@ -126,7 +127,7 @@ func (s stageModel) At(x, y int) color.Color {
 	pix := s.pix.Pixel(lat, lon).ID()
 	p, ok := s.plates[pix]
 	if !ok {
-		return color.RGBA{0, 0, 0, 0}
+		return color.RGBA{153, 153, 153, 255}
 	}
 	return s.color[p]
 }
@@ -155,13 +156,13 @@ func makePlatePalette(rec *model.Recons) map[int]color.RGBA {
 	plates := rec.Plates()
 	pc := make(map[int]color.RGBA, len(plates))
 	for _, plate := range plates {
-		pc[plate] = color.RGBA{randUint8(), randUint8(), randUint8(), 255}
+		pc[plate] = randColor()
 	}
 	return pc
 }
 
-func randUint8() uint8 {
-	return uint8(rand.Intn(255))
+func randColor() color.RGBA {
+	return blind.Sequential(blind.Iridescent, rand.Float64())
 }
 
 func writeImage(name string, sm stageModel) (err error) {
