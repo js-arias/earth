@@ -112,7 +112,7 @@ func NewStageRot(rec *Recons) *StageRot {
 
 // ReadStageRot reads a collection of stage rotations
 // from a TSV file that contains
-// a paleogeographic reconstruction model.
+// a plate motion model.
 //
 // The TSV file is a paleogeographic reconstruction model
 // and must contains the following columns:

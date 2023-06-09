@@ -65,7 +65,7 @@ func NewTotal(rec *Recons) *Total {
 
 // ReadTotal reads a collection of total rotations
 // from a TSV file that contains
-// a tectonic reconstruction model.
+// a plate motion model.
 // A total rotation is a rotation of a pixel in present time
 // to a given time stage.
 //

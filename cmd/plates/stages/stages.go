@@ -3,7 +3,7 @@
 // Distributed under BSD2 license that can be found in the LICENSE file.
 
 // Package stages implements a command to print
-// the time stages defined in a tectonic reconstruction model.
+// the time stages defined in a plate motion model.
 package stages
 
 import (
@@ -15,11 +15,11 @@ import (
 )
 
 var Command = &command.Command{
-	Usage: "stages <mode-file>",
-	Short: "print time stages of a tectonic reconstruction model",
+	Usage: "stages <model-file>",
+	Short: "print time stages of a plate motion model",
 	Long: `
-Command stages reads a tectonic reconstruction model and print the time stages
-(in million years) defined in the model.
+Command stages reads a plate motion model and print the time stages (in
+million years) defined in the model.
 
 The first argument of the command is the name of the file that contains the
 model.
@@ -34,7 +34,7 @@ const millionYears = 1_000_000
 
 func run(c *command.Command, args []string) error {
 	if len(args) < 1 {
-		return c.UsageError("expecting tectonic reconstruction model file")
+		return c.UsageError("expecting plate motion model file")
 	}
 
 	st, err := readStages(args[0])
