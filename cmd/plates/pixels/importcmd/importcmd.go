@@ -140,6 +140,11 @@ func read(r io.Reader, args []string, fc chan vector.Feature, ec chan error) {
 				if at != 0 && (f.Begin < at || f.End > at) {
 					continue
 				}
+
+				// skip features that start at present
+				if f.Begin == 0 {
+					continue
+				}
 				fc <- f
 			}
 		}(a)
