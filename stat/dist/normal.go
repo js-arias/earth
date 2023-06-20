@@ -143,6 +143,15 @@ func (n Normal) LogProb(dist float64) float64 {
 	return n.logPDF[r]
 }
 
+// LogProbRingDist returns the natural logarithm
+// of the probability density function
+// at a given ring distance
+// i.e. the ring of a pixel,
+// if one of the pixels is rotated to the north pole.
+func (n Normal) LogProbRingDist(rDist int) float64 {
+	return n.logPDF[rDist]
+}
+
 // Pix returns the underlying pixelation
 // of a normal distribution.
 func (n Normal) Pix() *earth.Pixelation {
@@ -158,6 +167,14 @@ func (n Normal) Prob(dist float64) float64 {
 		return 0
 	}
 	return n.pdf[r]
+}
+
+// ProbRingDist returns the the value of the probability density function
+// at a given ring distance
+// i.e. the ring of a pixel,
+// if one of the pixels is rotated to the north pole.
+func (n Normal) ProbRingDist(rDist int) float64 {
+	return n.pdf[rDist]
 }
 
 // Rand returns a random pixel
