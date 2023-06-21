@@ -23,7 +23,7 @@ func TestDistMat(t *testing.T) {
 		px2 := pix.Random()
 
 		d := earth.Distance(px1.Point(), px2.Point())
-		rd := int(math.Round(d / pix.Step()))
+		rd := int(math.Round(d / earth.ToRad(pix.Step())))
 
 		got := m.At(px1.ID(), px2.ID())
 		if got != rd {

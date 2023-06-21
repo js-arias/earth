@@ -43,7 +43,7 @@ func NewDistMat(pix *Pixelation) (*DistMat, error) {
 		for px2 := px1 + 1; px2 < rows; px2++ {
 			pt2 := pix.ID(px2).Point()
 			d := Distance(pt1, pt2)
-			v := uint8(math.Round(d / pix.Step()))
+			v := uint8(math.Round(d / ToRad(pix.Step())))
 
 			// The matrix is symmetric
 			loc1 := px1*rows + px2
