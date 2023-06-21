@@ -152,3 +152,17 @@ func TestNormalQuantileChord2(t *testing.T) {
 		}
 	}
 }
+
+func TestNormalRingProb(t *testing.T) {
+	pix := earth.NewPixelation(360)
+	n := dist.NewNormal(100, pix)
+	s := earth.ToRad(pix.Step()) / 4
+	for d := 0.0; d < math.Pi; d += s {
+		p := n.LogProb(d)
+		r := int(math.Round(d / earth.ToRad(pix.Step())))
+		x := n.LogProbRingDist(r)
+		if math.Abs(p-x) > 0.001 {
+			t.Errorf("probability at dist %.3f: got %.6f, want %.6f", d, x, p)
+		}
+	}
+}
