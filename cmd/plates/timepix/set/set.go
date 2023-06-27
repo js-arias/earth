@@ -7,13 +7,8 @@
 package set
 
 import (
-	"encoding/csv"
-	"errors"
 	"fmt"
-	"io"
 	"os"
-	"strconv"
-	"strings"
 
 	"github.com/js-arias/command"
 	"github.com/js-arias/earth"
@@ -31,22 +26,8 @@ time pixelation.
 
 The flag --in is required and is used to provide the name of the input file.
 The input file is a time pixelation file, and all pixels in the time frame
-will be set to the indicated values. The file is a TSV file with the following
-columns:
-	- equator, for the number of pixels at the equator
-	- age, the age of the time stage (in years)
-	- stage-pixel, the pixel ID at the time stage
-	- value, an integer value
-
-Here is an example file:
-
-	equator	age	stage-pixel	value
-	360	100000000	19051	1
-	360	100000000	19055	2
-	360	140000000	20051	1
-	360	140000000	20055	2
-
-If a pixel has a value of 0, then it will be deleted from the time pixelation.
+will be set to the indicated values. If a pixel has a value of 0, then it will
+be deleted from the time pixelation.
 
 The argument of the command is the file that contains the time pixelation.
 This argument is required.
@@ -87,24 +68,21 @@ func run(c *command.Command, args []string) error {
 	}
 	output := args[0]
 
-	tp, err := readTimePix(output)
+	tp, err := readTimePix(output, nil)
 	if err != nil {
 		return err
 	}
 
-	rows, err := readSourcePixels(inFlag, tp.Pixelation())
+	source, err := readTimePix(inFlag, tp.Pixelation())
 	if err != nil {
-		return nil
-	}
-	if len(rows) == 0 {
-		return nil
+		return err
 	}
 
 	var stages []int64
 	if atFlag >= 0 {
-		stages = []int64{tp.ClosestStageAge(int64(atFlag * millionYears))}
+		stages = []int64{source.ClosestStageAge(int64(atFlag * millionYears))}
 	} else {
-		st := tp.Stages()
+		st := source.Stages()
 		from := st[len(st)-1]
 		if fromFlag >= 0 {
 			from = int64(fromFlag * millionYears)
@@ -129,7 +107,7 @@ func run(c *command.Command, args []string) error {
 		slices.Sort(stages)
 	}
 
-	setTimeValue(tp, rows, stages)
+	setTimeValue(tp, source, stages)
 
 	if err := writeTimePix(output, tp); err != nil {
 		return err
@@ -137,129 +115,38 @@ func run(c *command.Command, args []string) error {
 	return nil
 }
 
-func setTimeValue(tp *model.TimePix, rows []pixRow, ages []int64) {
-	for _, r := range rows {
-		if _, ok := slices.BinarySearch(ages, r.age); !ok {
+func setTimeValue(tp, source *model.TimePix, ages []int64) {
+	for _, a := range ages {
+		r := source.Stage(a)
+		if r == nil {
 			continue
 		}
-		if r.val == 0 {
-			tp.Del(r.age, r.pix)
-			continue
+		for pix := 0; pix < tp.Pixelation().Len(); pix++ {
+			v, ok := r[pix]
+			if !ok {
+				continue
+			}
+			if v == 0 {
+				tp.Del(a, pix)
+				continue
+			}
+			tp.Set(a, pix, v)
 		}
-		tp.Set(r.age, r.pix, r.val)
 	}
 }
 
-func readTimePix(name string) (*model.TimePix, error) {
+func readTimePix(name string, pix *earth.Pixelation) (*model.TimePix, error) {
 	f, err := os.Open(name)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 
-	tp, err := model.ReadTimePix(f, nil)
+	tp, err := model.ReadTimePix(f, pix)
 	if err != nil {
 		return nil, fmt.Errorf("when reading file %q: %v", name, err)
 	}
 	return tp, nil
-}
-
-type pixRow struct {
-	age int64
-	pix int
-	val int
-}
-
-var tpHeader = []string{
-	"equator",
-	"age",
-	"stage-pixel",
-	"value",
-}
-
-func readSourcePixels(name string, pix *earth.Pixelation) ([]pixRow, error) {
-	f, err := os.Open(name)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	rows, err := readRows(f, pix)
-	if err != nil {
-		return nil, fmt.Errorf("on file %q: %v", name, err)
-	}
-	return rows, nil
-}
-
-func readRows(r io.Reader, pix *earth.Pixelation) ([]pixRow, error) {
-	tab := csv.NewReader(r)
-	tab.Comma = '\t'
-	tab.Comment = '#'
-
-	head, err := tab.Read()
-	if err != nil {
-		return nil, fmt.Errorf("while reading header: %v", err)
-	}
-	fields := make(map[string]int, len(head))
-	for i, h := range head {
-		h = strings.ToLower(h)
-		fields[h] = i
-	}
-	for _, h := range tpHeader {
-		if _, ok := fields[h]; !ok {
-			return nil, fmt.Errorf("expecting field %q", h)
-		}
-	}
-
-	var rows []pixRow
-	for {
-		row, err := tab.Read()
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		ln, _ := tab.FieldPos(0)
-		if err != nil {
-			return nil, fmt.Errorf("on row %d: %v", ln, err)
-		}
-
-		f := "equator"
-		eq, err := strconv.Atoi(row[fields[f]])
-		if err != nil {
-			return nil, fmt.Errorf("on row %d: field %q: %v", ln, f, err)
-		}
-		if eq != pix.Equator() {
-			return nil, fmt.Errorf("on row %d: field %q: got %d pixels, want %d", ln, f, eq, pix.Equator())
-		}
-
-		f = "age"
-		age, err := strconv.ParseInt(row[fields[f]], 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("on row %d: field %q: %v", ln, f, err)
-		}
-
-		f = "stage-pixel"
-		px, err := strconv.Atoi(row[fields[f]])
-		if err != nil {
-			return nil, fmt.Errorf("on row %d: field %q: %v", ln, f, err)
-		}
-		if px >= pix.Len() {
-			return nil, fmt.Errorf("on row %d: field %q: invalid pixel value %d", ln, f, px)
-		}
-
-		f = "value"
-		v, err := strconv.Atoi(row[fields[f]])
-		if err != nil {
-			return nil, fmt.Errorf("on row %d: field %q: %v", ln, f, err)
-		}
-
-		rows = append(rows, pixRow{
-			age: age,
-			pix: px,
-			val: v,
-		})
-	}
-
-	return rows, nil
 }
 
 func writeTimePix(name string, tp *model.TimePix) (err error) {
