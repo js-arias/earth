@@ -166,3 +166,27 @@ func TestNormalRingProb(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkRandNormalSmall(b *testing.B) {
+	pix := earth.NewPixelation(360)
+	u := pix.Random()
+
+	// small lambda
+	n := dist.NewNormal(5, pix)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		n.Rand(u)
+	}
+}
+
+func BenchmarkRandNormal(b *testing.B) {
+	pix := earth.NewPixelation(360)
+	u := pix.Random()
+
+	// large lambda
+	n := dist.NewNormal(100, pix)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		n.Rand(u)
+	}
+}

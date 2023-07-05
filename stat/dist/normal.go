@@ -184,31 +184,14 @@ func (n Normal) ProbRingDist(rDist int) float64 {
 func (n Normal) Rand(u earth.Pixel) earth.Pixel {
 	uPt := u.Point()
 
-	// For small lambda values
-	// sample from an uniform distribution over the globe.
-	// The limit was found empirically
-	if n.lambda <= 8 {
-		logP := n.logPDF[0]
-		for {
-			tp := n.pix.Random()
-			dist := earth.Distance(uPt, tp.Point())
-
-			logT := n.LogProb(dist)
-			accept := math.Exp(logT - logP)
-			if rand.Float64() < accept {
-				return tp
-			}
-		}
-	}
-
-	// for large lambda values
-	// sample using the radius
 	for {
-		dist := rand.Float64() * math.Pi
-		p := n.Ring(dist) / n.maxRing
+		// pick ring
+		r := rand.Intn(len(n.ring))
+		p := n.ring[r] / n.maxRing
 		if rand.Float64() >= p {
 			continue
 		}
+		dist := float64(r) * n.step
 
 		b := rand.Float64() * 2 * math.Pi
 		pt := earth.Destination(uPt, dist, b)
