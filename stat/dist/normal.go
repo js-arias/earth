@@ -185,13 +185,9 @@ func (n Normal) Rand(u earth.Pixel) earth.Pixel {
 	uPt := u.Point()
 
 	for {
-		// pick ring
-		r := rand.Intn(len(n.ring))
-		p := n.ring[r] / n.maxRing
-		if rand.Float64() >= p {
-			continue
-		}
-		dist := float64(r) * n.step
+		// inversion sampling
+		r, _ := slices.BinarySearch(n.cdf, rand.Float64())
+		dist := (float64(r) + n.step/2) * n.step
 
 		b := rand.Float64() * 2 * math.Pi
 		pt := earth.Destination(uPt, dist, b)
