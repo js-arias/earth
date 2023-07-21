@@ -13,6 +13,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/js-arias/blind"
 	"github.com/js-arias/earth"
 	"github.com/js-arias/earth/stat/dist"
 	"gonum.org/v1/plot"
@@ -104,25 +105,9 @@ func (p *probImage) At(x, y int) color.Color {
 	pix := p.pix.Pixel(lat, lon).ID()
 	v, ok := p.pts[pix]
 	if !ok {
-		return color.RGBA{255, 255, 255, 255}
+		return color.RGBA{102, 102, 102, 255}
 	}
-	return scaleColor(v / p.max)
-}
-
-func scaleColor(scale float64) color.RGBA {
-	switch {
-	case scale < 0.25:
-		g := scale * 4 * 255
-		return color.RGBA{0, uint8(g), 255, 255}
-	case scale < 0.50:
-		b := (scale - 0.25) * 4 * 255
-		return color.RGBA{0, 255, 255 - uint8(b), 255}
-	case scale < 0.75:
-		r := (scale - 0.5) * 4 * 255
-		return color.RGBA{uint8(r), 255, 0, 255}
-	}
-	g := (scale - 0.75) * 4 * 255
-	return color.RGBA{255, 255 - uint8(g), 0, 255}
+	return blind.Gradient(v / p.max)
 }
 
 func writeImage(name string, img *probImage) (err error) {
