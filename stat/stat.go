@@ -9,6 +9,7 @@ import (
 	"github.com/js-arias/earth"
 	"github.com/js-arias/earth/model"
 	"github.com/js-arias/earth/stat/pixprob"
+	"golang.org/x/exp/slices"
 )
 
 // DistProber is an interface for a discrete spherical PDF
@@ -21,15 +22,9 @@ type DistProber interface {
 	Prob(float64) float64
 }
 
-// QuantileChord2er is an interface for a discrete spherical distribution
-// that is isotropic.
-type QuantileChord2er interface {
-	DistProber
-
-	// QuantileChord2 returns the square of the Euclidean chord distance
-	// for the maximum distance
-	// that is inside the indicated cumulative density.
-	QuantileChord2(float64) float64
+type pixDensity struct {
+	pix  int
+	prob float64
 }
 
 // KDE implements a Kernel Density Estimation
@@ -38,14 +33,14 @@ type QuantileChord2er interface {
 // (a map of pixel IDs to weight*value of the pixel),
 // a time pixelation
 // the age of the destination raster,
-// a set of pixel priors,
-// and a bound for the CDF of the distribution
-// (i.e. pixels outside the indicated CDF in d will be ignored).
-func KDE(d QuantileChord2er, p map[int]float64, tp *model.TimePix, age int64, prior pixprob.Pixel, bound float64) map[int]float64 {
+// a set of pixel priors.
+// It return pixel values scaled to their CDF.
+func KDE(d DistProber, p map[int]float64, tp *model.TimePix, age int64, prior pixprob.Pixel) map[int]float64 {
 	age = tp.ClosestStageAge(age)
 
-	maxChord2 := d.QuantileChord2(bound)
-	density := make(map[int]float64)
+	// calculates the raw density of all pixels
+	var cum float64
+	raw := make([]pixDensity, 0, tp.Pixelation().Len())
 	for px := 0; px < tp.Pixelation().Len(); px++ {
 		v, _ := tp.At(age, px)
 		pp := 1.0
@@ -61,16 +56,31 @@ func KDE(d QuantileChord2er, p map[int]float64, tp *model.TimePix, age int64, pr
 		var sum float64
 		for rp, w := range p {
 			pt2 := tp.Pixelation().ID(rp).Point()
-			if earth.Chord2(pt1, pt2) > maxChord2 {
-				continue
-			}
 			dist := earth.Distance(pt1, pt2)
 			sum += d.Prob(dist) * w
 		}
 		if sum == 0 {
 			continue
 		}
-		density[px] = sum * pp
+		p := sum * pp
+		raw = append(raw, pixDensity{
+			pix:  px,
+			prob: p,
+		})
+		cum += p
 	}
+
+	// scale values
+	slices.SortFunc(raw, func(a, b pixDensity) bool {
+		// descending sort
+		return a.prob > b.prob
+	})
+	cdf := cum
+	density := make(map[int]float64, len(raw))
+	for _, r := range raw {
+		density[r.pix] = cdf / cum
+		cdf -= r.prob
+	}
+
 	return density
 }
