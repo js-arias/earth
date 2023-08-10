@@ -10,11 +10,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strconv"
 
 	"github.com/js-arias/command"
 	"github.com/js-arias/earth/model"
-	"golang.org/x/exp/slices"
 )
 
 var Command = &command.Command{

@@ -7,16 +7,11 @@ package dist
 
 import (
 	"math"
-	"time"
+	"math/rand"
+	"slices"
 
 	"github.com/js-arias/earth"
-	"golang.org/x/exp/rand"
-	"golang.org/x/exp/slices"
 )
-
-func init() {
-	rand.Seed(uint64(time.Now().UnixNano()))
-}
 
 // Normal is an isotropic univariate spherical normal distribution
 // discretized over a pixelation.

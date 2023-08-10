@@ -189,7 +189,6 @@ func TestPixels(t *testing.T) {
 			pixelsHelper(t, name, test.in, pix, test.want)
 		})
 	}
-	t.Error("test OK")
 }
 
 func pixelsHelper(t testing.TB, name, in string, pix *earth.Pixelation, want []int) {

@@ -11,14 +11,13 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"math/rand"
 	"os"
-	"time"
 
 	"github.com/js-arias/blind"
 	"github.com/js-arias/command"
 	"github.com/js-arias/earth"
 	"github.com/js-arias/earth/model"
-	"golang.org/x/exp/rand"
 )
 
 var Command = &command.Command{
@@ -90,10 +89,6 @@ func run(c *command.Command, args []string) error {
 		}
 	}
 	return nil
-}
-
-func init() {
-	rand.Seed(uint64(time.Now().UnixNano()))
 }
 
 func readRecons(name string) (*model.Recons, error) {

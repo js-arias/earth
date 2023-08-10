@@ -6,10 +6,11 @@
 package stat
 
 import (
+	"slices"
+
 	"github.com/js-arias/earth"
 	"github.com/js-arias/earth/model"
 	"github.com/js-arias/earth/stat/pixprob"
-	"golang.org/x/exp/slices"
 )
 
 // DistProber is an interface for a discrete spherical PDF
@@ -71,9 +72,15 @@ func KDE(d DistProber, p map[int]float64, tp *model.TimePix, age int64, prior pi
 	}
 
 	// scale values
-	slices.SortFunc(raw, func(a, b pixDensity) bool {
+	slices.SortFunc(raw, func(a, b pixDensity) int {
 		// descending sort
-		return a.prob > b.prob
+		if a.prob > b.prob {
+			return -1
+		}
+		if a.prob < b.prob {
+			return 1
+		}
+		return 0
 	})
 	cdf := cum
 	density := make(map[int]float64, len(raw))

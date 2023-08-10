@@ -10,11 +10,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/js-arias/earth"
-	"golang.org/x/exp/slices"
 	"gonum.org/v1/gonum/num/quat"
 	"gonum.org/v1/gonum/spatial/r3"
 )
@@ -169,8 +169,15 @@ func Read(r io.Reader) (Rotation, error) {
 	}
 
 	for _, p := range rots {
-		slices.SortFunc(p.rot, func(a, b euler) bool {
-			return a.t < b.t
+		slices.SortFunc(p.rot, func(a, b euler) int {
+			if a.t < b.t {
+				return -1
+			}
+			if a.t > b.t {
+				return 1
+			}
+
+			return 0
 		})
 
 		// add a zero rotation by default

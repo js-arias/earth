@@ -8,9 +8,9 @@ import (
 	"image"
 	"image/color"
 	"math"
+	"slices"
 
 	"github.com/js-arias/earth"
-	"golang.org/x/exp/slices"
 	rasterizer "golang.org/x/image/vector"
 )
 

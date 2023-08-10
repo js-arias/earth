@@ -10,13 +10,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/js-arias/earth"
-	"golang.org/x/exp/slices"
 )
 
 // A PixPlate is a collection of pixels

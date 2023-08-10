@@ -15,16 +15,15 @@ import (
 	_ "image/jpeg"
 	"image/png"
 	"io"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/js-arias/blind"
 	"github.com/js-arias/command"
 	"github.com/js-arias/earth"
 	"github.com/js-arias/earth/vector"
-	"golang.org/x/exp/rand"
 )
 
 var Command = &command.Command{
@@ -167,10 +166,6 @@ func run(c *command.Command, args []string) error {
 		return err
 	}
 	return nil
-}
-
-func init() {
-	rand.Seed(uint64(time.Now().UnixNano()))
 }
 
 type mapImg struct {

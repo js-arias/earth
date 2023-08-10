@@ -9,11 +9,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/js-arias/earth"
-	"golang.org/x/exp/slices"
 )
 
 // Total is a collection of total rotations

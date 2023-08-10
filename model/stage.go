@@ -6,9 +6,9 @@ package model
 
 import (
 	"io"
+	"slices"
 
 	"github.com/js-arias/earth"
-	"golang.org/x/exp/slices"
 )
 
 // StageRot is a collection of stage rotations.
