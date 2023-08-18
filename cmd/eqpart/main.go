@@ -7,6 +7,7 @@ package main
 
 import (
 	"github.com/js-arias/command"
+	"github.com/js-arias/earth/cmd/eqpart/ids"
 	"github.com/js-arias/earth/cmd/eqpart/lencmd"
 	"github.com/js-arias/earth/cmd/eqpart/mapcmd"
 	"github.com/js-arias/earth/cmd/eqpart/pixel"
@@ -18,6 +19,7 @@ var app = &command.Command{
 }
 
 func init() {
+	app.Add(ids.Command)
 	app.Add(lencmd.Command)
 	app.Add(mapcmd.Command)
 	app.Add(pixel.Command)
