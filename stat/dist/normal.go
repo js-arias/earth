@@ -31,6 +31,7 @@ type Normal struct {
 	pix    *earth.Pixelation
 	step   float64 // step of a ring in radians
 	lambda float64 // concentration parameter
+	v      float64 // variance
 
 	pdf       []float64
 	cdf       []float64
@@ -67,15 +68,11 @@ func NewNormal(lambda float64, pix *earth.Pixelation) Normal {
 	}
 
 	// scale values
-	var maxRing float64
 	pdf := make([]float64, rings)
 	logSum := math.Log(sum)
 	for i := range logPDF {
 		r := ring[i] / sum
 		ring[i] = r
-		if r > maxRing {
-			maxRing = r
-		}
 
 		cdf[i] = cdf[i] / sum
 		logPDF[i] = logPDF[i] - logSum
@@ -83,10 +80,20 @@ func NewNormal(lambda float64, pix *earth.Pixelation) Normal {
 		scaled[i] = pdf[i] / pdf[0]
 	}
 
+	// calculate the variance
+	// using formula (18) from Hauberg (2018)
+	var vv float64
+	for i, p := range pdf {
+		dist := float64(i) * rStep
+		vv += dist * dist * p * float64(pix.PixPerRing(i))
+	}
+	vv = vv / float64(pix.Len())
+
 	return Normal{
 		pix:    pix,
 		step:   rStep,
 		lambda: lambda,
+		v:      vv,
 
 		pdf:       pdf,
 		cdf:       cdf,
@@ -224,4 +231,19 @@ func (n Normal) ScaledProb(dist float64) float64 {
 // if one of the pixels is rotated to the north pole.
 func (n Normal) ScaledProbRingDist(rDist int) float64 {
 	return n.scaledPDF[rDist]
+}
+
+// Variance returns the Variance
+// (in radians^2)
+// calculated from the indicated random samples.
+func (n Normal) Variance(samples int) float64 {
+	pt := n.pix.Pixel(90, 0)
+
+	var v float64
+	for i := 0; i < samples; i++ {
+		p := n.Rand(pt)
+		d := earth.Distance(p.Point(), pt.Point())
+		v += d
+	}
+	return v / float64(samples)
 }
