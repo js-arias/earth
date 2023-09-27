@@ -31,6 +31,7 @@ type Normal struct {
 	pix    *earth.Pixelation
 	step   float64 // step of a ring in radians
 	lambda float64 // concentration parameter
+	v      float64 // variance
 
 	pdf       []float64
 	cdf       []float64
@@ -69,6 +70,7 @@ func NewNormal(lambda float64, pix *earth.Pixelation) Normal {
 	// scale values
 	pdf := make([]float64, rings)
 	logSum := math.Log(sum)
+	var v float64
 	for i := range logPDF {
 		r := ring[i] / sum
 		ring[i] = r
@@ -77,12 +79,15 @@ func NewNormal(lambda float64, pix *earth.Pixelation) Normal {
 		logPDF[i] = logPDF[i] - logSum
 		pdf[i] = math.Exp(logPDF[i])
 		scaled[i] = pdf[i] / pdf[0]
+		dist := float64(i) * rStep
+		v += dist * dist * pdf[i] * float64(pix.PixPerRing(i))
 	}
 
 	return Normal{
 		pix:    pix,
 		step:   rStep,
 		lambda: lambda,
+		v:      v,
 
 		pdf:       pdf,
 		cdf:       cdf,
@@ -223,16 +228,7 @@ func (n Normal) ScaledProbRingDist(rDist int) float64 {
 }
 
 // Variance returns the Variance
-// (in radians^2)
-// calculated from the indicated random samples.
+// (in radians^2).
 func (n Normal) Variance(samples int) float64 {
-	pt := n.pix.Pixel(90, 0)
-
-	var v float64
-	for i := 0; i < samples; i++ {
-		p := n.Rand(pt)
-		d := earth.Distance(p.Point(), pt.Point())
-		v += d
-	}
-	return v / float64(samples)
+	return n.v
 }

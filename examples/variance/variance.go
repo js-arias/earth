@@ -37,6 +37,14 @@ func main() {
 	p.X.Label.Text = "lambda (radians^-2)"
 	p.Y.Label.Text = "variance (radians^2)"
 
+	sp, err := plotter.NewLine(lambdaVarSample(pix))
+	if err != nil {
+		panic(err)
+	}
+	sp.LineStyle.Width = vg.Points(3)
+	sp.LineStyle.Color = color.RGBA{0, 0, 255, 255}
+	p.Add(sp)
+
 	ln, err := plotter.NewLine(lambdaVar(pix))
 	if err != nil {
 		panic(err)
@@ -48,7 +56,7 @@ func main() {
 	p.Y.Min = 0
 
 	// save the plot to a PNG file
-	if err := p.Save(4*vg.Inch, 4*vg.Inch, "pix-dist.png"); err != nil {
+	if err := p.Save(4*vg.Inch, 4*vg.Inch, "variance.png"); err != nil {
 		panic(err)
 	}
 }
@@ -61,6 +69,29 @@ func lambdaVar(pix *earth.Pixelation) plotter.XYs {
 		n := dist.NewNormal(lambda, pix)
 		v[i].X = lambda
 		v[i].Y = n.Variance(samples)
+	}
+
+	return v
+}
+
+func lambdaVarSample(pix *earth.Pixelation) plotter.XYs {
+	pt := pix.Pixel(90, 0)
+
+	v := make(plotter.XYs, 1000)
+	delta := maxLambda / 1000
+	for i := 0; i < 1000; i++ {
+		lambda := float64(i)*delta + delta/2
+		n := dist.NewNormal(lambda, pix)
+
+		var vv float64
+		for i := 0; i < samples; i++ {
+			p := n.Rand(pt)
+			d := earth.Distance(p.Point(), pt.Point())
+			vv += d * d
+		}
+
+		v[i].X = lambda
+		v[i].Y = vv / float64(samples)
 	}
 
 	return v
