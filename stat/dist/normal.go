@@ -31,7 +31,6 @@ type Normal struct {
 	pix    *earth.Pixelation
 	step   float64 // step of a ring in radians
 	lambda float64 // concentration parameter
-	v      float64 // variance
 
 	pdf       []float64
 	cdf       []float64
@@ -80,20 +79,10 @@ func NewNormal(lambda float64, pix *earth.Pixelation) Normal {
 		scaled[i] = pdf[i] / pdf[0]
 	}
 
-	// calculate the variance
-	// using formula (18) from Hauberg (2018)
-	var vv float64
-	for i, p := range pdf {
-		dist := float64(i) * rStep
-		vv += dist * dist * p * float64(pix.PixPerRing(i))
-	}
-	vv = vv / float64(pix.Len())
-
 	return Normal{
 		pix:    pix,
 		step:   rStep,
 		lambda: lambda,
-		v:      vv,
 
 		pdf:       pdf,
 		cdf:       cdf,
