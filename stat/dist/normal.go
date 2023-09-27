@@ -32,12 +32,11 @@ type Normal struct {
 	step   float64 // step of a ring in radians
 	lambda float64 // concentration parameter
 
-	maxRing float64 // maximum ring probability
-
-	pdf    []float64
-	cdf    []float64
-	ring   []float64
-	logPDF []float64
+	pdf       []float64
+	cdf       []float64
+	ring      []float64
+	logPDF    []float64
+	scaledPDF []float64
 }
 
 // NewNormal returns a discretized spherical normal,
@@ -49,6 +48,7 @@ func NewNormal(lambda float64, pix *earth.Pixelation) Normal {
 	logPDF := make([]float64, rings)
 	cdf := make([]float64, rings)
 	ring := make([]float64, rings)
+	scaled := make([]float64, rings)
 
 	rStep := earth.ToRad(pix.Step())
 
@@ -80,17 +80,19 @@ func NewNormal(lambda float64, pix *earth.Pixelation) Normal {
 		cdf[i] = cdf[i] / sum
 		logPDF[i] = logPDF[i] - logSum
 		pdf[i] = math.Exp(logPDF[i])
+		scaled[i] = pdf[i] / pdf[0]
 	}
 
 	return Normal{
-		pix:     pix,
-		step:    rStep,
-		lambda:  lambda,
-		maxRing: maxRing,
-		pdf:     pdf,
-		cdf:     cdf,
-		ring:    ring,
-		logPDF:  logPDF,
+		pix:    pix,
+		step:   rStep,
+		lambda: lambda,
+
+		pdf:       pdf,
+		cdf:       cdf,
+		ring:      ring,
+		logPDF:    logPDF,
+		scaledPDF: scaled,
 	}
 }
 
@@ -199,4 +201,27 @@ func (n Normal) Ring(dist float64) float64 {
 		return 0
 	}
 	return n.ring[r]
+}
+
+// ScaledProb returns the value of the probability density function
+// for a pixel at a distance dist
+// (in radians)
+// scaled by the maximum probability
+// (i.e. by 0 distance).
+func (n Normal) ScaledProb(dist float64) float64 {
+	r := int(math.Round(dist / n.step))
+	if r >= len(n.pdf) {
+		return 0
+	}
+	return n.scaledPDF[r]
+}
+
+// ScaledRingDist returns the value of the probability density function
+// scaled by the maximum probability
+// (i.e. by 0 distance).
+// at a given ring distance
+// i.e. the ring of a pixel,
+// if one of the pixels is rotated to the north pole.
+func (n Normal) ScaledProbRingDist(rDist int) float64 {
+	return n.scaledPDF[rDist]
 }

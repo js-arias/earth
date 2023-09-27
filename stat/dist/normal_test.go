@@ -167,6 +167,31 @@ func TestNormalRingProb(t *testing.T) {
 	}
 }
 
+func TestScaledProb(t *testing.T) {
+	pix := earth.NewPixelation(360)
+	n := dist.NewNormal(100, pix)
+	bound := 0.000001
+
+	pt := pix.Pixel(90, 0).Point()
+
+	for i := 0; i < 1000; i++ {
+		u := pix.Random()
+		dist := earth.Distance(pt, u.Point())
+		want := n.Prob(dist) / n.Prob(0)
+		got := n.ScaledProb(dist)
+		diff := math.Abs(want - got)
+		if diff > bound {
+			t.Errorf("scaled probability at distance %.6f [pixel %d]: got %g, want %g", dist, u.ID(), got, want)
+		}
+
+		pDist := n.ScaledProbRingDist(u.Ring())
+		diff = math.Abs(want - pDist)
+		if diff > bound {
+			t.Errorf("scaled probability at ring distance %d [pixel %d]: got %g, want %g", u.Ring(), u.ID(), pDist, want)
+		}
+	}
+}
+
 func BenchmarkRandNormalSmall(b *testing.B) {
 	pix := earth.NewPixelation(360)
 	u := pix.Random()
