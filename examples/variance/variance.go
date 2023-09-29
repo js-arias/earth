@@ -68,7 +68,7 @@ func lambdaVar(pix *earth.Pixelation) plotter.XYs {
 		lambda := float64(i)*delta + delta/2
 		n := dist.NewNormal(lambda, pix)
 		v[i].X = lambda
-		v[i].Y = n.Variance(samples)
+		v[i].Y = n.Variance()
 	}
 
 	return v

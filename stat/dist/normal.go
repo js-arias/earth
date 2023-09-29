@@ -229,6 +229,6 @@ func (n Normal) ScaledProbRingDist(rDist int) float64 {
 
 // Variance returns the Variance
 // (in radians^2).
-func (n Normal) Variance(samples int) float64 {
+func (n Normal) Variance() float64 {
 	return n.v
 }
