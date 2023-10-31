@@ -146,17 +146,17 @@ func Read(r io.Reader) (Rotation, error) {
 			return Rotation{}, fmt.Errorf("row %d [ID: %d]: column 'fixed plate': %v", i, id, err)
 		}
 
-		rot := euler{
-			t:     int64(t * millionYears),
-			e:     earth.NewPoint(lat, lon).Vector(),
-			angle: earth.ToRad(ang),
-			fix:   fix,
+		rot := Euler{
+			T:     int64(t * millionYears),
+			E:     earth.NewPoint(lat, lon),
+			Angle: earth.ToRad(ang),
+			Fix:   fix,
 		}
 
 		// check if the rotation is repeated
 		rep := false
 		for _, r := range p.rot {
-			if r.t == rot.t && r.fix == rot.fix {
+			if r.T == rot.T && r.Fix == rot.Fix {
 				rep = true
 				break
 			}
@@ -169,11 +169,11 @@ func Read(r io.Reader) (Rotation, error) {
 	}
 
 	for _, p := range rots {
-		slices.SortFunc(p.rot, func(a, b euler) int {
-			if a.t < b.t {
+		slices.SortFunc(p.rot, func(a, b Euler) int {
+			if a.T < b.T {
 				return -1
 			}
-			if a.t > b.t {
+			if a.T > b.T {
 				return 1
 			}
 
@@ -182,12 +182,12 @@ func Read(r io.Reader) (Rotation, error) {
 
 		// add a zero rotation by default
 		// if not defined.
-		if p.rot[0].t > 0 {
-			r := euler{
-				e:   earth.NorthPole.Vector(),
-				fix: p.rot[0].fix,
+		if p.rot[0].T > 0 {
+			r := Euler{
+				E:   earth.NorthPole,
+				Fix: p.rot[0].Fix,
 			}
-			p.rot = append([]euler{r}, p.rot...)
+			p.rot = append([]Euler{r}, p.rot...)
 		}
 
 		// check that conjugate
@@ -204,11 +204,11 @@ func Read(r io.Reader) (Rotation, error) {
 				continue
 			}
 			j := i + 1
-			if p.rot[j].t != r.t {
+			if p.rot[j].T != r.T {
 				continue
 			}
 			k := i - 1
-			if p.rot[k].fix != r.fix {
+			if p.rot[k].Fix != r.Fix {
 				p.rot[i], p.rot[j] = p.rot[j], p.rot[i]
 			}
 		}
@@ -248,8 +248,8 @@ func (r Rotation) Rotation(plate int, t int64) (r3.Rotation, bool) {
 			return r3.Rotation{}, false
 		}
 
-		tot := quat.Number(r3.NewRotation(p.rot[x].angle, p.rot[x].e))
-		if p.rot[x].t != t {
+		tot := quat.Number(r3.NewRotation(p.rot[x].Angle, p.rot[x].E.Vector()))
+		if p.rot[x].T != t {
 			stage := p.stage(x, t)
 			tot = quat.Mul(stage, tot)
 		}
@@ -259,13 +259,26 @@ func (r Rotation) Rotation(plate int, t int64) (r3.Rotation, bool) {
 			qt = quat.Mul(tot, qt)
 		}
 
-		p, ok = r.p[p.rot[x].fix]
+		p, ok = r.p[p.rot[x].Fix]
 		if !ok {
 			break
 		}
 	}
 
 	return r3.Rotation(qt), true
+}
+
+// Euler returns the list of Euler rotations
+// for a given plate.
+func (r Rotation) Euler(plate int) []Euler {
+	p, ok := r.p[plate]
+	if !ok {
+		return nil
+	}
+
+	e := make([]Euler, len(p.rot))
+	copy(e, p.rot)
+	return e
 }
 
 // Plates return the plates defined for a rotation model.
@@ -282,18 +295,18 @@ func (r Rotation) Plates() []int {
 // for the indicated plate.
 type plate struct {
 	id  int     // ID of the plate
-	rot []euler // rotations
+	rot []Euler // rotations
 }
 
 // Stage returns the stage rotation between two total rotations,
 // and scale it to the time we are looking for
 // (follows the procedure given by Cox & Hart, pp. 245-246).
 func (p *plate) stage(x int, t int64) quat.Number {
-	q1 := quat.Number(r3.NewRotation(-p.rot[x].angle, p.rot[x].e))
-	q2 := quat.Number(r3.NewRotation(p.rot[x-1].angle, p.rot[x-1].e))
+	q1 := quat.Number(r3.NewRotation(-p.rot[x].Angle, p.rot[x].E.Vector()))
+	q2 := quat.Number(r3.NewRotation(p.rot[x-1].Angle, p.rot[x-1].E.Vector()))
 	s := quat.Mul(q2, q1)
 
-	delta := float64(p.rot[x].t-t) / float64(p.rot[x].t-p.rot[x-1].t)
+	delta := float64(p.rot[x].T-t) / float64(p.rot[x].T-p.rot[x-1].T)
 
 	// In quaternions,
 	// exponential to delta
@@ -305,7 +318,7 @@ func (p *plate) stage(x int, t int64) quat.Number {
 // that adjust better to the required rotation.
 func (p *plate) timePos(t int64) int {
 	for i, v := range p.rot {
-		if v.t >= t {
+		if v.T >= t {
 			return i
 		}
 	}
@@ -314,11 +327,11 @@ func (p *plate) timePos(t int64) int {
 
 // Euler is a rotation of a moving plate
 // relative to a fixed plate.
-type euler struct {
-	t     int64   // starting time for the rotation (in years)
-	e     r3.Vec  // Euler pole
-	angle float64 // angle of the rotation in radians
-	fix   int     // ID of the fixed plate
+type Euler struct {
+	T     int64       // starting time for the rotation (in years)
+	E     earth.Point // Euler pole
+	Angle float64     // angle of the rotation in radians
+	Fix   int         // ID of the fixed plate
 }
 
 // Rotate returns a vector

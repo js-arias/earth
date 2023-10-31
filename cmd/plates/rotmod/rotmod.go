@@ -8,6 +8,7 @@ package rotmod
 
 import (
 	"github.com/js-arias/command"
+	"github.com/js-arias/earth/cmd/plates/rotmod/euler"
 	"github.com/js-arias/earth/cmd/plates/rotmod/plates"
 )
 
@@ -17,5 +18,6 @@ var Command = &command.Command{
 }
 
 func init() {
+	Command.Add(euler.Command)
 	Command.Add(plates.Command)
 }

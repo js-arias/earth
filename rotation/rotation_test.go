@@ -221,6 +221,24 @@ func TestPlates(t *testing.T) {
 	}
 }
 
+func TestEuler(t *testing.T) {
+	rots, err := rotation.Read(strings.NewReader(coxHartTable73))
+	if err != nil {
+		t.Fatalf("when reading rotations: %v", err)
+	}
+
+	want := []rotation.Euler{
+		{E: earth.NewPoint(0, 0), Fix: 1},
+		{T: 37_000_000, E: earth.NewPoint(70.5, -18.7), Angle: earth.ToRad(-10.4), Fix: 1},
+		{T: 66_000_000, E: earth.NewPoint(80.8, -8.6), Angle: earth.ToRad(-22.5), Fix: 1},
+		{T: 71_000_000, E: earth.NewPoint(80.4, -12.5), Angle: earth.ToRad(-23.9), Fix: 1},
+	}
+	e := rots.Euler(2)
+	if !reflect.DeepEqual(e, want) {
+		t.Errorf("euler: got %v, want %v", e, want)
+	}
+}
+
 func testRotation(t testing.TB, r, rot r3.Rotation, lat, lon float64) {
 	t.Helper()
 
