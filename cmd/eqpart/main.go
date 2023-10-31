@@ -11,6 +11,7 @@ import (
 	"github.com/js-arias/earth/cmd/eqpart/lencmd"
 	"github.com/js-arias/earth/cmd/eqpart/mapcmd"
 	"github.com/js-arias/earth/cmd/eqpart/pixel"
+	"github.com/js-arias/earth/cmd/eqpart/variance"
 )
 
 var app = &command.Command{
@@ -23,6 +24,7 @@ func init() {
 	app.Add(lencmd.Command)
 	app.Add(mapcmd.Command)
 	app.Add(pixel.Command)
+	app.Add(variance.Command)
 }
 
 func main() {
