@@ -10,6 +10,7 @@ import (
 	"github.com/js-arias/earth/cmd/plates/mapcmd"
 	"github.com/js-arias/earth/cmd/plates/pixels"
 	"github.com/js-arias/earth/cmd/plates/rotate"
+	"github.com/js-arias/earth/cmd/plates/rotmod"
 	"github.com/js-arias/earth/cmd/plates/stages"
 	"github.com/js-arias/earth/cmd/plates/timepix"
 )
@@ -23,6 +24,7 @@ func init() {
 	app.Add(pixels.Command)
 	app.Add(mapcmd.Command)
 	app.Add(rotate.Command)
+	app.Add(rotmod.Command)
 	app.Add(stages.Command)
 	app.Add(timepix.Command)
 }

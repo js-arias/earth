@@ -6,6 +6,7 @@ package rotation_test
 
 import (
 	"math"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -68,13 +69,8 @@ func TestIntermediate(t *testing.T) {
 	testRotation(t, r, newRotation(8.25, -62.65, -44.39), 20, 130)
 }
 
-// This test is for a rotation
-// in a rotation  hierarchy
-// (a global circuit in Cox & Hart).
-// It is based on the example of pp. 248-251
-// and table 7-3 of Cox & Hart.
-func TestCircuit(t *testing.T) {
-	in := `1 0.0 90.0 0.0 0.0 0
+// Table 7-3 of Cox & Hart.
+var coxHartTable73 = `1 0.0 90.0 0.0 0.0 0
 1 37.0 68.0 129.9   7.8 0
 1 48.0 50.8 142.8   9.8 0
 1 53.0 40.0 145.0  11.4 0
@@ -96,7 +92,14 @@ func TestCircuit(t *testing.T) {
 5 63.0  8.9 -26.6  17.2 4
 5 83.0  5.6  -4.7  38.6 4
 `
-	rots, err := rotation.Read(strings.NewReader(in))
+
+// This test is for a rotation
+// in a rotation  hierarchy
+// (a global circuit in Cox & Hart).
+// It is based on the example of pp. 248-251
+// and table 7-3 of Cox & Hart.
+func TestCircuit(t *testing.T) {
+	rots, err := rotation.Read(strings.NewReader(coxHartTable73))
 	if err != nil {
 		t.Fatalf("when reading rotations: %v", err)
 	}
@@ -202,6 +205,19 @@ func TestRepeated(t *testing.T) {
 	}
 	if math.IsNaN(r.Imag) {
 		t.Errorf("nan rotation: %v", r)
+	}
+}
+
+func TestPlates(t *testing.T) {
+	rots, err := rotation.Read(strings.NewReader(coxHartTable73))
+	if err != nil {
+		t.Fatalf("when reading rotations: %v", err)
+	}
+
+	plates := rots.Plates()
+	want := []int{1, 2, 3, 4, 5}
+	if !reflect.DeepEqual(plates, want) {
+		t.Errorf("plates: got %v, want %v", plates, want)
 	}
 }
 

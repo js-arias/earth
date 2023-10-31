@@ -268,6 +268,16 @@ func (r Rotation) Rotation(plate int, t int64) (r3.Rotation, bool) {
 	return r3.Rotation(qt), true
 }
 
+// Plates return the plates defined for a rotation model.
+func (r Rotation) Plates() []int {
+	plates := make([]int, 0, len(r.p))
+	for id := range r.p {
+		plates = append(plates, id)
+	}
+	slices.Sort(plates)
+	return plates
+}
+
 // A Plate is a collection of rotations
 // for the indicated plate.
 type plate struct {
