@@ -239,6 +239,33 @@ func TestEuler(t *testing.T) {
 	}
 }
 
+func TestMultiJump(t *testing.T) {
+	in := `505  0.0   0.0    0.0    0.0  501 !!
+505 50.0 -28.83 -123.27   40.16  501 !!
+505 65.0 -33.6 -123.6   75.56  501 !!
+505 65.0 -17.21 -138.31  116.59  000 !! crs 04/24/98
+505 65.0 -22.55 -127.64  106.34  503 !! crs 04/24/98
+505 96.0 -22.55 -127.64  106.34  503 !!
+	`
+
+	rots, err := rotation.Read(strings.NewReader(in))
+	if err != nil {
+		t.Fatalf("when reading rotations: %v", err)
+	}
+	want := []rotation.Euler{
+		{E: earth.NewPoint(0, 0), Fix: 501},
+		{T: 50_000_000, E: earth.NewPoint(-28.83, -123.27), Angle: earth.ToRad(40.16), Fix: 501},
+		{T: 65_000_000, E: earth.NewPoint(-33.6, -123.6), Angle: earth.ToRad(75.56), Fix: 501},
+		{T: 65_000_000, E: earth.NewPoint(-22.55, -127.64), Angle: earth.ToRad(106.34), Fix: 503},
+		{T: 96_000_000, E: earth.NewPoint(-22.55, -127.64), Angle: earth.ToRad(106.34), Fix: 503},
+	}
+
+	e := rots.Euler(505)
+	if !reflect.DeepEqual(e, want) {
+		t.Errorf("euler: got %v, want %v", e, want)
+	}
+}
+
 func testRotation(t testing.TB, r, rot r3.Rotation, lat, lon float64) {
 	t.Helper()
 

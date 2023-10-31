@@ -7,6 +7,7 @@ package rotation
 
 import (
 	"bufio"
+	"cmp"
 	"errors"
 	"fmt"
 	"io"
@@ -170,14 +171,7 @@ func Read(r io.Reader) (Rotation, error) {
 
 	for _, p := range rots {
 		slices.SortFunc(p.rot, func(a, b Euler) int {
-			if a.T < b.T {
-				return -1
-			}
-			if a.T > b.T {
-				return 1
-			}
-
-			return 0
+			return cmp.Compare(a.T, b.T)
 		})
 
 		// add a zero rotation by default
@@ -188,6 +182,48 @@ func Read(r io.Reader) (Rotation, error) {
 				Fix: p.rot[0].Fix,
 			}
 			p.rot = append([]Euler{r}, p.rot...)
+		}
+
+		// remove wrong jumps
+		for i := 0; i < len(p.rot); i++ {
+			if i == 0 {
+				continue
+			}
+			if i+1 == len(p.rot) {
+				continue
+			}
+
+			r := p.rot[i]
+
+			j := i + 1
+			k := i - 1
+
+			if p.rot[j].T != r.T && p.rot[k].T != r.T {
+				continue
+			}
+
+			prev := -1
+			for x := i; x >= 0; x-- {
+				if p.rot[x].T != r.T {
+					prev = p.rot[x].Fix
+					break
+				}
+			}
+			if prev == p.rot[i].Fix {
+				continue
+			}
+			post := -1
+			for x := i; x < len(p.rot); x++ {
+				if p.rot[x].T != r.T {
+					post = p.rot[x].Fix
+					break
+				}
+			}
+			if post == p.rot[i].Fix {
+				continue
+			}
+
+			p.rot = slices.Delete(p.rot, i, i+1)
 		}
 
 		// check that conjugate
