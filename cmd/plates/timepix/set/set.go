@@ -7,9 +7,14 @@
 package set
 
 import (
+	"encoding/csv"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"slices"
+	"strconv"
+	"strings"
 
 	"github.com/js-arias/command"
 	"github.com/js-arias/earth"
@@ -18,16 +23,31 @@ import (
 
 var Command = &command.Command{
 	Usage: `set [--from <age>] [--to <age>] [--at <age>]
-	--in <time-pix-file> <time-pix-file>`,
+	[-f|--format <format>] --in <model-file> <time-pix-file>`,
 	Short: "set pixels of a time pixelation",
 	Long: `
 Command set reads pixels from time pixelation file, and set that values into a
 time pixelation.
 
 The flag --in is required and is used to provide the name of the input file.
-The input file is a time pixelation file, and all pixels in the time frame
-will be set to the indicated values. If a pixel has a value of 0, then it will
-be deleted from the time pixelation.
+By default, the input file is a time pixelation file, other kind of files can
+be defined using the flag --format, or -f. Valid format are:
+
+	latlon	 a location file
+	timepix  default value, a time pixelation file
+
+All pixels defined in the input file, and inside the indicated time frame will
+be to the indicated values. If a pixel has a value of 0, then it will be
+deleted from the time pixelation.
+
+The locations file is a tab-delimited text file with the following columns:
+	
+	- age        the age for the value in years
+	- latitude   the geographic latitude of the location,
+	             at the indicated age
+	- longitude  the geographic longitude of the location,
+	             at the indicated age
+	- value      the value to be set
 
 The argument of the command is the file that contains the time pixelation.
 This argument is required.
@@ -42,6 +62,7 @@ to set a particular time stage.
 }
 
 var inFlag string
+var format string
 var fromFlag float64
 var toFlag float64
 var atFlag float64
@@ -51,6 +72,8 @@ func setFlags(c *command.Command) {
 	c.Flags().Float64Var(&toFlag, "to", -1, "")
 	c.Flags().Float64Var(&atFlag, "at", -1, "")
 	c.Flags().StringVar(&inFlag, "in", "", "")
+	c.Flags().StringVar(&format, "format", "timepix", "")
+	c.Flags().StringVar(&format, "f", "timepix", "")
 }
 
 // MillionYears is used to transform ages in the flags
@@ -73,16 +96,11 @@ func run(c *command.Command, args []string) error {
 		return err
 	}
 
-	source, err := readTimePix(inFlag, tp.Pixelation())
-	if err != nil {
-		return err
-	}
-
 	var stages []int64
 	if atFlag >= 0 {
-		stages = []int64{source.ClosestStageAge(int64(atFlag * millionYears))}
+		stages = []int64{tp.ClosestStageAge(int64(atFlag * millionYears))}
 	} else {
-		st := source.Stages()
+		st := tp.Stages()
 		from := st[len(st)-1]
 		if fromFlag >= 0 {
 			from = int64(fromFlag * millionYears)
@@ -106,8 +124,26 @@ func run(c *command.Command, args []string) error {
 		}
 		slices.Sort(stages)
 	}
+	switch strings.ToLower(format) {
+	case "latlon":
+		ages := make(map[int64]bool, len(stages))
+		for _, a := range stages {
+			ages[a] = true
+		}
 
-	setTimeValue(tp, source, stages)
+		if err := addLocations(inFlag, tp, ages); err != nil {
+			return err
+		}
+	case "timepix":
+		source, err := readTimePix(inFlag, tp.Pixelation())
+		if err != nil {
+			return err
+		}
+
+		setTimeValue(tp, source, stages)
+	default:
+		return fmt.Errorf("unknown format %q", format)
+	}
 
 	if err := writeTimePix(output, tp); err != nil {
 		return err
@@ -147,6 +183,93 @@ func readTimePix(name string, pix *earth.Pixelation) (*model.TimePix, error) {
 		return nil, fmt.Errorf("when reading file %q: %v", name, err)
 	}
 	return tp, nil
+}
+
+var locHead = []string{
+	"age",
+	"latitude",
+	"longitude",
+	"value",
+}
+
+func addLocations(name string, tp *model.TimePix, ages map[int64]bool) error {
+	f, err := os.Open(name)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	tab := csv.NewReader(f)
+	tab.Comma = '\t'
+	tab.Comment = '#'
+
+	head, err := tab.Read()
+	if err != nil {
+		return fmt.Errorf("file %q: header: %v", name, err)
+	}
+	fields := make(map[string]int, len(head))
+	for i, h := range head {
+		h = strings.ToLower(h)
+		fields[h] = i
+	}
+	for _, h := range locHead {
+		if _, ok := fields[h]; !ok {
+			return fmt.Errorf("file %q: expecting field %q", name, h)
+		}
+	}
+
+	pix := tp.Pixelation()
+	for {
+		row, err := tab.Read()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		ln, _ := tab.FieldPos(0)
+		if err != nil {
+			return fmt.Errorf("on file %q: row %d: %v", name, ln, err)
+		}
+
+		f := "age"
+		age, err := strconv.ParseInt(row[fields[f]], 10, 64)
+		if err != nil {
+			return fmt.Errorf("on file %q: row %d: field %q: %v", name, ln, f, err)
+		}
+		if !ages[age] {
+			continue
+		}
+
+		f = "latitude"
+		lat, err := strconv.ParseFloat(row[fields[f]], 64)
+		if err != nil {
+			return fmt.Errorf("on file %q: row %d: field %q: %v", name, ln, f, err)
+		}
+		if lat < -90 || lat > 90 {
+			return fmt.Errorf("on file %q: row %d: field %q: invalid latitude value %.6f", name, ln, f, lat)
+		}
+
+		f = "longitude"
+		lon, err := strconv.ParseFloat(row[fields[f]], 64)
+		if err != nil {
+			return fmt.Errorf("on file %q: row %d: field %q: %v", name, ln, f, err)
+		}
+		if lon < -180 || lon > 180 {
+			return fmt.Errorf("on file %q: row %d: field %q: invalid longitude value %.6f", name, ln, f, lon)
+		}
+
+		f = "value"
+		v, err := strconv.Atoi(row[fields[f]])
+		if err != nil {
+			return fmt.Errorf("on file %q: row %d: field %q: %v", name, ln, f, err)
+		}
+
+		px := pix.Pixel(lat, lon).ID()
+		if v == 0 {
+			tp.Del(age, px)
+			continue
+		}
+		tp.Set(age, px, v)
+	}
+	return nil
 }
 
 func writeTimePix(name string, tp *model.TimePix) (err error) {
