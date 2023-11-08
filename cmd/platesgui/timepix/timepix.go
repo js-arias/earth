@@ -77,14 +77,14 @@ field, Set, shows the value used to set a pixel.
 
 The following keys can be used:
 
-	<space>      go to next time stage
-	<backspace>  go to previous time stage
-	"+"          zoom in
-	"-"          zoom out
-	"S"          changes the set value for a pixel
-	"M"          shows a mask for all the pixels with the same value as
-	             the current pixel
-	"W"          writes any change to the time pixelation model
+	"N"  go to next time stage
+	"P"  go to previous time stage
+	"+"  zoom in
+	"-"  zoom out
+	"S"  changes the set value for a pixel
+	"M"  shows a mask for all the pixels with the same value as 
+	     the current pixel
+	"W"  writes any change to the time pixelation model
 
 To set a pixel, click the mouse over a pixel while holding the <shift> key.
 
@@ -239,10 +239,9 @@ func registerEvents(gtx layout.Context, sp *mapStagePix) {
 		Types: pointer.Move | pointer.Drag | pointer.Press,
 	}.Add(gtx.Ops)
 
-	keys := fmt.Sprintf("+|-|%s|%s|M|S|W", key.NameSpace, key.NameDeleteBackward)
 	key.InputOp{
 		Tag:  sp,
-		Keys: key.Set(keys),
+		Keys: key.Set("+|-|M|N|P|S|W"),
 	}.Add(gtx.Ops)
 
 	area.Pop()
@@ -302,12 +301,12 @@ func events(gtx layout.Context, sp *mapStagePix) {
 					continue
 				}
 				sp.dirty = false
-			case key.NameSpace:
+			case "N":
 				sp.stage++
 				if sp.stage >= len(sp.stages) {
 					sp.stage = len(sp.stages) - 1
 				}
-			case key.NameDeleteBackward:
+			case "P":
 				sp.stage--
 				if sp.stage < 0 {
 					sp.stage = 0
