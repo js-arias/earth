@@ -51,3 +51,30 @@ key	prior	comment
 		}
 	}
 }
+
+func TestSet(t *testing.T) {
+	p := pixprob.New()
+	p.Set(1, 0.01)
+	p.Set(2, 0.05)
+	p.Set(3, 1.00)
+
+	want := pixprob.Pixel{
+		0: 0,
+		1: 0.01,
+		2: 0.05,
+		3: 1.00,
+	}
+	if !reflect.DeepEqual(p, want) {
+		t.Errorf("got %v, want %v", p, want)
+	}
+	vs := []int{0, 1, 2, 3}
+	if g := p.Values(); !reflect.DeepEqual(g, vs) {
+		t.Errorf("values: got %v, want %v", g, vs)
+	}
+
+	for _, v := range vs {
+		if p.Prior(v) != want[v] {
+			t.Errorf("prior: value %d: got %.6f, want %.6f", v, p.Prior(v), want[v])
+		}
+	}
+}

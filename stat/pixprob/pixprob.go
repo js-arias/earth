@@ -24,10 +24,25 @@ import (
 // of all other pixels.
 type Pixel map[int]float64
 
+// New creates a new Pixel object to store
+// prior probabilities from pixel types.
+//
+// By default,
+// the ID 0 is defined with probability 0.
+func New() Pixel {
+	return Pixel{0: 0}
+}
+
 // Prior returns the prior probability
 // of a pixel for a given raster value.
 func (px Pixel) Prior(v int) float64 {
 	return px[v]
+}
+
+// Set set a pixel probability
+// for a given raster value.
+func (px Pixel) Set(v int, prob float64) {
+	px[v] = prob
 }
 
 // Values return the raster values
