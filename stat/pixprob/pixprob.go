@@ -7,12 +7,14 @@
 package pixprob
 
 import (
+	"bufio"
 	"encoding/csv"
 	"errors"
 	"fmt"
 	"io"
 	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/exp/slices"
 )
@@ -57,6 +59,39 @@ func (px Pixel) Values() []int {
 	return vs
 }
 
+// TSV encodes a pixel prior as a TSV file.
+func (px Pixel) TSV(w io.Writer) error {
+	bw := bufio.NewWriter(w)
+	fmt.Fprintf(bw, "# pixel priors\n")
+	fmt.Fprintf(bw, "# data save on: %s\n", time.Now().Format(time.RFC3339))
+	tab := csv.NewWriter(bw)
+	tab.Comma = '\t'
+	tab.UseCRLF = true
+	if err := tab.Write([]string{"key", "prior"}); err != nil {
+		return fmt.Errorf("while writing header: %v", err)
+	}
+
+	vs := px.Values()
+	for _, v := range vs {
+		row := []string{
+			strconv.Itoa(v),
+			strconv.FormatFloat(px[v], 'f', 6, 64),
+		}
+		if err := tab.Write(row); err != nil {
+			return fmt.Errorf("while writing data: %v", err)
+		}
+	}
+
+	tab.Flush()
+	if err := tab.Error(); err != nil {
+		return fmt.Errorf("while writing data: %v", err)
+	}
+	if err := bw.Flush(); err != nil {
+		return fmt.Errorf("while writing data: %v", err)
+	}
+	return nil
+}
+
 // ReadTSV reads a TSV file used to define the prior probability values
 // for a given set of pixels values in a pixelation.
 //
@@ -97,7 +132,7 @@ func ReadTSV(r io.Reader) (Pixel, error) {
 		}
 	}
 
-	p := Pixel{}
+	p := New()
 	for {
 		row, err := tsv.Read()
 		if errors.Is(err, io.EOF) {

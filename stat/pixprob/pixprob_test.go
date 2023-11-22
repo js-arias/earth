@@ -5,6 +5,7 @@
 package pixprob_test
 
 import (
+	"bytes"
 	"reflect"
 	"strings"
 	"testing"
@@ -77,4 +78,36 @@ func TestSet(t *testing.T) {
 			t.Errorf("prior: value %d: got %.6f, want %.6f", v, p.Prior(v), want[v])
 		}
 	}
+}
+
+func TestWrite(t *testing.T) {
+	p := pixprob.New()
+	p.Set(1, 0.01)
+	p.Set(2, 0.05)
+	p.Set(3, 1.00)
+
+	var b bytes.Buffer
+	if err := p.TSV(&b); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	got, err := pixprob.ReadTSV(&b)
+	if err != nil {
+		t.Fatalf("unable to read data: %v", err)
+	}
+	if !reflect.DeepEqual(got, p) {
+		t.Errorf("got %v, want %v", got, p)
+	}
+
+	vs := []int{0, 1, 2, 3}
+	if g := got.Values(); !reflect.DeepEqual(g, vs) {
+		t.Errorf("values: got %v, want %v", g, vs)
+	}
+
+	for _, v := range vs {
+		if got.Prior(v) != p[v] {
+			t.Errorf("prior: value %d: got %.6f, want %.6f", v, got.Prior(v), p[v])
+		}
+	}
+
 }
