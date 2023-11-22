@@ -43,8 +43,12 @@ func (px Pixel) Prior(v int) float64 {
 
 // Set set a pixel probability
 // for a given raster value.
-func (px Pixel) Set(v int, prob float64) {
+func (px Pixel) Set(v int, prob float64) error {
+	if prob < 0 || prob > 1 {
+		return fmt.Errorf("invalid prior value %.6f", prob)
+	}
 	px[v] = prob
+	return nil
 }
 
 // Values return the raster values
@@ -61,6 +65,12 @@ func (px Pixel) Values() []int {
 
 // TSV encodes a pixel prior as a TSV file.
 func (px Pixel) TSV(w io.Writer) error {
+	for k, prob := range px {
+		if prob < 0 || prob > 1 {
+			return fmt.Errorf("invalid pixel probability %.6f for pixel %d", prob, k)
+		}
+	}
+
 	bw := bufio.NewWriter(w)
 	fmt.Fprintf(bw, "# pixel priors\n")
 	fmt.Fprintf(bw, "# data save on: %s\n", time.Now().Format(time.RFC3339))

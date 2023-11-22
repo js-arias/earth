@@ -59,6 +59,10 @@ func TestSet(t *testing.T) {
 	p.Set(2, 0.05)
 	p.Set(3, 1.00)
 
+	if err := p.Set(4, 2.0); err == nil {
+		t.Errorf("invalid value %.1f: expecting error", 2.0)
+	}
+
 	want := pixprob.Pixel{
 		0: 0,
 		1: 0.01,
@@ -109,5 +113,4 @@ func TestWrite(t *testing.T) {
 			t.Errorf("prior: value %d: got %.6f, want %.6f", v, got.Prior(v), p[v])
 		}
 	}
-
 }
