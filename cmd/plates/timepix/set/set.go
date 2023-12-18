@@ -22,7 +22,7 @@ import (
 )
 
 var Command = &command.Command{
-	Usage: `set [--from <age>] [--to <age>] [--at <age>]
+	Usage: `set [--from <age>] [--to <age>] [--at <age>] [--nozero]
 	[-f|--format <format>] --in <model-file> <time-pix-file>`,
 	Short: "set pixels of a time pixelation",
 	Long: `
@@ -38,7 +38,8 @@ be defined using the flag --format, or -f. Valid format are:
 
 All pixels defined in the input file, and inside the indicated time frame will
 be to the indicated values. If a pixel has a value of 0, then it will be
-deleted from the time pixelation.
+deleted from the time pixelation. With the flag --nozero, zero value will be
+skipped.
 
 The locations file is a tab-delimited text file with the following columns:
 	
@@ -61,6 +62,7 @@ to set a particular time stage.
 	Run:      run,
 }
 
+var noZero bool
 var inFlag string
 var format string
 var fromFlag float64
@@ -68,6 +70,7 @@ var toFlag float64
 var atFlag float64
 
 func setFlags(c *command.Command) {
+	c.Flags().BoolVar(&noZero, "nozero", false, "")
 	c.Flags().Float64Var(&fromFlag, "from", -1, "")
 	c.Flags().Float64Var(&toFlag, "to", -1, "")
 	c.Flags().Float64Var(&atFlag, "at", -1, "")
@@ -162,7 +165,7 @@ func setTimeValue(tp, source *model.TimePix, ages []int64) {
 			if !ok {
 				continue
 			}
-			if v == 0 {
+			if v == 0 && !noZero {
 				tp.Del(a, pix)
 				continue
 			}
@@ -263,7 +266,7 @@ func addLocations(name string, tp *model.TimePix, ages map[int64]bool) error {
 		}
 
 		px := pix.Pixel(lat, lon).ID()
-		if v == 0 {
+		if v == 0 && !noZero {
 			tp.Del(age, px)
 			continue
 		}
