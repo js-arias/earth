@@ -13,6 +13,7 @@ import (
 	"github.com/js-arias/earth/cmd/plates/timepix/rotate"
 	"github.com/js-arias/earth/cmd/plates/timepix/set"
 	"github.com/js-arias/earth/cmd/plates/timepix/stages"
+	"github.com/js-arias/earth/cmd/plates/timepix/values"
 )
 
 var Command = &command.Command{
@@ -26,4 +27,5 @@ func init() {
 	Command.Add(rotate.Command)
 	Command.Add(set.Command)
 	Command.Add(stages.Command)
+	Command.Add(values.Command)
 }
