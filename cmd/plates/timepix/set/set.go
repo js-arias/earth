@@ -165,8 +165,10 @@ func setTimeValue(tp, source *model.TimePix, ages []int64) {
 			if !ok {
 				continue
 			}
-			if v == 0 && !noZero {
-				tp.Del(a, pix)
+			if v == 0 {
+				if !noZero {
+					tp.Del(a, pix)
+				}
 				continue
 			}
 			tp.Set(a, pix, v)
@@ -266,8 +268,10 @@ func addLocations(name string, tp *model.TimePix, ages map[int64]bool) error {
 		}
 
 		px := pix.Pixel(lat, lon).ID()
-		if v == 0 && !noZero {
-			tp.Del(age, px)
+		if v == 0 {
+			if !noZero {
+				tp.Del(age, px)
+			}
 			continue
 		}
 		tp.Set(age, px, v)
