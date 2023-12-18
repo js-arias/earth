@@ -9,6 +9,7 @@ package timepix
 import (
 	"github.com/js-arias/command"
 	"github.com/js-arias/earth/cmd/plates/timepix/add"
+	"github.com/js-arias/earth/cmd/plates/timepix/change"
 	"github.com/js-arias/earth/cmd/plates/timepix/mapcmd"
 	"github.com/js-arias/earth/cmd/plates/timepix/rotate"
 	"github.com/js-arias/earth/cmd/plates/timepix/set"
@@ -23,6 +24,7 @@ var Command = &command.Command{
 
 func init() {
 	Command.Add(add.Command)
+	Command.Add(change.Command)
 	Command.Add(mapcmd.Command)
 	Command.Add(rotate.Command)
 	Command.Add(set.Command)
