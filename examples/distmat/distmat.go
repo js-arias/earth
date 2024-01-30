@@ -122,7 +122,7 @@ func withMatrix(pixels []int) {
 	pix := earth.NewPixelation(360)
 
 	start := time.Now()
-	dm, err := earth.NewDistMat(pix)
+	dm, err := earth.NewDistMatRingScale(pix)
 	if err != nil {
 		panic(err)
 	}

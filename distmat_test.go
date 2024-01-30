@@ -13,7 +13,7 @@ import (
 
 func TestDistMat(t *testing.T) {
 	pix := earth.NewPixelation(360)
-	m, err := earth.NewDistMat(pix)
+	m, err := earth.NewDistMatRingScale(pix)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
