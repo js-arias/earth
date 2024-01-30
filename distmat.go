@@ -24,7 +24,7 @@ type DistMat struct {
 // NewDistMat creates a new distance matrix
 // from the indicated pixelation.
 // To save memory,
-// only pixelations up to 512 pixels at the equator
+// only pixelations up to 255 pixels at the equator
 // can be defined.
 func NewDistMat(pix *Pixelation) (*DistMat, error) {
 	rows := pix.Len()
@@ -35,30 +35,35 @@ func NewDistMat(pix *Pixelation) (*DistMat, error) {
 	dm := &DistMat{
 		pix:  pix,
 		rows: rows,
-		m:    make([]uint8, rows*rows),
+		m:    make([]uint8, sizeMatrix(rows)),
 	}
 
-	for px1 := 0; px1 < rows-1; px1++ {
+	for px1 := 0; px1 < pix.Len(); px1++ {
 		pt1 := pix.ID(px1).Point()
-		for px2 := px1 + 1; px2 < rows; px2++ {
+		for px2 := 0; px2 <= px1; px2++ {
 			pt2 := pix.ID(px2).Point()
 			d := Distance(pt1, pt2)
 			v := uint8(math.Round(d / ToRad(pix.Step())))
 
-			// The matrix is symmetric
-			loc1 := px1*rows + px2
-			loc2 := px2*rows + px1
-			dm.m[loc1] = v
-			dm.m[loc2] = v
+			loc := sizeMatrix(px1) + px2
+			dm.m[loc] = v
 		}
 	}
 
 	return dm, nil
 }
 
+// SizeMatrix returns the size of a triangular matrix.
+func sizeMatrix(d int) int {
+	return (d + 1) * d / 2
+}
+
 // At returns the value of the ring distance
 // between two pixel IDs.
 func (dm *DistMat) At(x, y int) int {
-	p := x*dm.rows + y
-	return int(dm.m[p])
+	if y > x {
+		x, y = y, x
+	}
+	loc := sizeMatrix(x) + y
+	return int(dm.m[loc])
 }
