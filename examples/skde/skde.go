@@ -31,10 +31,8 @@ func main() {
 	for px := 0; px < pix.Len(); px++ {
 		tp.Set(0, px, 1)
 	}
-	pp := pixprob.Pixel{
-		0: 0,
-		1: 1,
-	}
+	pp := pixprob.New()
+	pp.Set(1, 1)
 
 	n := dist.NewNormal(lambda, pix)
 	pt := pix.Pixel(-26.81, -65.22)
