@@ -22,7 +22,8 @@ import (
 
 var Command = &command.Command{
 	Usage: `add [--from <age>] [--to <age>] [--at <age>]
-	[-f|--format <format>] [--source <value>] --val <value>
+	[-f|--format <format>]
+	[--source <value>] [--only <value>] --val <value>
 	--in <model-file>
 	<time-pix-file>`,
 	Short: "add pixels to a time pixelation",
@@ -51,6 +52,8 @@ same as the value to be added. To read a different source pixel value, use the
 
 The flag --val is required and sets the value used for the pixels to be
 assigned. If the pixel has a value already, the largest value will be stored.
+With the flag --only, only the pixels defined with the given value in the
+destination pixelation will be modified.
 
 The argument of the command is the file that contains the time pixelation. If
 the files does not exist, it will create a new file, if it exists, pixels will
@@ -69,6 +72,7 @@ var inFlag string
 var format string
 var valFlag int
 var srcFlag int
+var onlyFlag int
 var fromFlag float64
 var toFlag float64
 var atFlag float64
@@ -77,6 +81,7 @@ func setFlags(c *command.Command) {
 	c.Flags().Float64Var(&fromFlag, "from", -1, "")
 	c.Flags().Float64Var(&toFlag, "to", -1, "")
 	c.Flags().Float64Var(&atFlag, "at", -1, "")
+	c.Flags().IntVar(&onlyFlag, "only", -1, "")
 	c.Flags().IntVar(&srcFlag, "source", -1, "")
 	c.Flags().IntVar(&valFlag, "val", -1, "")
 	c.Flags().StringVar(&format, "format", "model", "")
@@ -240,6 +245,12 @@ func setTimeValue(tp *model.TimePix, tot *model.Total, ages []int64) {
 		}
 		for id := range st {
 			v, _ := tp.At(a, id)
+			if onlyFlag > 0 {
+				if onlyFlag == v {
+					tp.Set(a, id, valFlag)
+				}
+				continue
+			}
 			if valFlag > v {
 				tp.Set(a, id, valFlag)
 			}
@@ -258,6 +269,12 @@ func setTimePixValue(tp *model.TimePix, src *model.TimePix, ages []int64) {
 				continue
 			}
 			v, _ := tp.At(a, id)
+			if onlyFlag > 0 {
+				if onlyFlag == v {
+					tp.Set(a, id, valFlag)
+				}
+				continue
+			}
 			if valFlag > v {
 				tp.Set(a, id, valFlag)
 			}
@@ -271,7 +288,12 @@ func setMaskValue(tp *model.TimePix, mask image.Image, age int64) {
 
 	pix := tp.Pixelation()
 	for px := 0; px < pix.Len(); px++ {
-		if v, _ := tp.At(age, px); v >= valFlag {
+		v, _ := tp.At(age, px)
+		if onlyFlag > 0 {
+			if onlyFlag != v {
+				continue
+			}
+		} else if v >= valFlag {
 			continue
 		}
 
@@ -294,6 +316,12 @@ func setPixValue(tp *model.TimePix, pp *model.PixPlate, age int64) {
 				continue
 			}
 			v, _ := tp.At(age, id)
+			if onlyFlag > 0 {
+				if onlyFlag == v {
+					tp.Set(age, id, valFlag)
+				}
+				continue
+			}
 			if valFlag > v {
 				tp.Set(age, id, valFlag)
 			}
