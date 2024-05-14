@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -19,12 +20,19 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+// Prob stores the prior probability
+// of a pixel.
+type prob struct {
+	p  float64
+	ln float64 // logPrior
+}
+
 // Pixel is the prior probability of a pixel
 // given a raster value.
 //
 // Each pixel is assumed to be independent
 // of all other pixels.
-type Pixel map[int]float64
+type Pixel map[int]prob
 
 // New creates a new Pixel object to store
 // prior probabilities from pixel types.
@@ -32,22 +40,42 @@ type Pixel map[int]float64
 // By default,
 // the ID 0 is defined with probability 0.
 func New() Pixel {
-	return Pixel{0: 0}
+	pp := map[int]prob{
+		0: {p: 0, ln: math.Inf(-1)},
+	}
+	return pp
+}
+
+// LogPrior returns the log prior probability
+// of a pixel for a given raster value.
+func (px Pixel) LogPrior(v int) float64 {
+	p, ok := px[v]
+	if !ok {
+		return math.Inf(-1)
+	}
+	return p.ln
 }
 
 // Prior returns the prior probability
 // of a pixel for a given raster value.
 func (px Pixel) Prior(v int) float64 {
-	return px[v]
+	p, ok := px[v]
+	if !ok {
+		return 0
+	}
+	return p.p
 }
 
 // Set set a pixel probability
 // for a given raster value.
-func (px Pixel) Set(v int, prob float64) error {
-	if prob < 0 || prob > 1 {
-		return fmt.Errorf("invalid prior value %.6f", prob)
+func (px Pixel) Set(v int, p float64) error {
+	if p < 0 || p > 1 {
+		return fmt.Errorf("invalid prior value %.6f", p)
 	}
-	px[v] = prob
+	px[v] = prob{
+		p:  p,
+		ln: math.Log(p),
+	}
 	return nil
 }
 
@@ -65,9 +93,9 @@ func (px Pixel) Values() []int {
 
 // TSV encodes a pixel prior as a TSV file.
 func (px Pixel) TSV(w io.Writer) error {
-	for k, prob := range px {
-		if prob < 0 || prob > 1 {
-			return fmt.Errorf("invalid pixel probability %.6f for pixel %d", prob, k)
+	for k, p := range px {
+		if p.p < 0 || p.p > 1 {
+			return fmt.Errorf("invalid pixel probability %.6f for pixel %d", p.p, k)
 		}
 	}
 
@@ -85,7 +113,7 @@ func (px Pixel) TSV(w io.Writer) error {
 	for _, v := range vs {
 		row := []string{
 			strconv.Itoa(v),
-			strconv.FormatFloat(px[v], 'f', 6, 64),
+			strconv.FormatFloat(px[v].p, 'f', 6, 64),
 		}
 		if err := tab.Write(row); err != nil {
 			return fmt.Errorf("while writing data: %v", err)
@@ -168,7 +196,10 @@ func ReadTSV(r io.Reader) (Pixel, error) {
 			return nil, fmt.Errorf("on row %d: field %q: invalid prior value %.6f", ln, f, pp)
 		}
 
-		p[k] = pp
+		p[k] = prob{
+			p:  pp,
+			ln: math.Log(pp),
+		}
 	}
 
 	return p, nil

@@ -6,6 +6,7 @@ package pixprob_test
 
 import (
 	"bytes"
+	"math"
 	"reflect"
 	"strings"
 	"testing"
@@ -24,7 +25,7 @@ key	prior	comment
 5	0.001000	ice sheets
 `
 
-	want := pixprob.Pixel{
+	want := map[int]float64{
 		0: 0,
 		1: 0.01,
 		2: 0.05,
@@ -37,9 +38,6 @@ key	prior	comment
 	if err != nil {
 		t.Fatalf("unable to read data: %v", err)
 	}
-	if !reflect.DeepEqual(p, want) {
-		t.Errorf("got %v, want %v", p, want)
-	}
 
 	vs := []int{0, 1, 2, 3, 4, 5}
 	if g := p.Values(); !reflect.DeepEqual(g, vs) {
@@ -49,6 +47,9 @@ key	prior	comment
 	for _, v := range vs {
 		if p.Prior(v) != want[v] {
 			t.Errorf("prior: value %d: got %.6f, want %.6f", v, p.Prior(v), want[v])
+		}
+		if p.LogPrior(v) != math.Log(want[v]) {
+			t.Errorf("prior: value %d: got %.6f, want %.6f", v, p.LogPrior(v), math.Log(want[v]))
 		}
 	}
 }
@@ -63,14 +64,11 @@ func TestSet(t *testing.T) {
 		t.Errorf("invalid value %.1f: expecting error", 2.0)
 	}
 
-	want := pixprob.Pixel{
+	want := map[int]float64{
 		0: 0,
 		1: 0.01,
 		2: 0.05,
 		3: 1.00,
-	}
-	if !reflect.DeepEqual(p, want) {
-		t.Errorf("got %v, want %v", p, want)
 	}
 	vs := []int{0, 1, 2, 3}
 	if g := p.Values(); !reflect.DeepEqual(g, vs) {
@@ -80,6 +78,9 @@ func TestSet(t *testing.T) {
 	for _, v := range vs {
 		if p.Prior(v) != want[v] {
 			t.Errorf("prior: value %d: got %.6f, want %.6f", v, p.Prior(v), want[v])
+		}
+		if p.LogPrior(v) != math.Log(want[v]) {
+			t.Errorf("prior: value %d: got %.6f, want %.6f", v, p.LogPrior(v), math.Log(want[v]))
 		}
 	}
 }
@@ -109,8 +110,11 @@ func TestWrite(t *testing.T) {
 	}
 
 	for _, v := range vs {
-		if got.Prior(v) != p[v] {
+		if got.Prior(v) != p.Prior(v) {
 			t.Errorf("prior: value %d: got %.6f, want %.6f", v, got.Prior(v), p[v])
+		}
+		if got.LogPrior(v) != p.LogPrior(v) {
+			t.Errorf("prior: value %d: got %.6f, want %.6f", v, got.LogPrior(v), p.LogPrior(v))
 		}
 	}
 }
