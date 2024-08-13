@@ -2,9 +2,9 @@
 // All rights reserved.
 // Distributed under BSD2 license that can be found in the LICENSE file.
 
-// Package pixprob associates a pixelation raster value
-// with a probability for a pixel.
-package pixprob
+// Package weight associates a pixelation raster value
+// with a normalized weight (between 0 and 1) for a pixel.
+package weight
 
 import (
 	"bufio"
@@ -13,42 +13,42 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
-
-	"golang.org/x/exp/slices"
 )
 
-// Prob stores the prior probability
+// Weight stores the normalized weight
 // of a pixel.
-type prob struct {
-	p  float64
-	ln float64 // logPrior
+type weight struct {
+	w  float64
+	ln float64 // logWeight
 }
 
-// Pixel is the prior probability of a pixel
-// given a raster value.
+// Pixel is a set of normalized weights
+// (a value between 0 and 1)
+// for the values given to a pixel.
 //
 // Each pixel is assumed to be independent
 // of all other pixels.
-type Pixel map[int]prob
+type Pixel map[int]weight
 
 // New creates a new Pixel object to store
-// prior probabilities from pixel types.
+// normalized weight from pixel types.
 //
 // By default,
-// the ID 0 is defined with probability 0.
+// the ID 0 is defined with weight 0.
 func New() Pixel {
-	pp := map[int]prob{
-		0: {p: 0, ln: math.Inf(-1)},
+	pw := map[int]weight{
+		0: {w: 0, ln: math.Inf(-1)},
 	}
-	return pp
+	return pw
 }
 
-// LogPrior returns the log prior probability
-// of a pixel for a given raster value.
-func (px Pixel) LogPrior(v int) float64 {
+// LogWeight returns the log of the weight
+// for a given raster value.
+func (px Pixel) LogWeight(v int) float64 {
 	p, ok := px[v]
 	if !ok {
 		return math.Inf(-1)
@@ -56,31 +56,31 @@ func (px Pixel) LogPrior(v int) float64 {
 	return p.ln
 }
 
-// Prior returns the prior probability
-// of a pixel for a given raster value.
-func (px Pixel) Prior(v int) float64 {
+// Weight returns the normalized weight
+// for a given raster value.
+func (px Pixel) Weight(v int) float64 {
 	p, ok := px[v]
 	if !ok {
 		return 0
 	}
-	return p.p
+	return p.w
 }
 
-// Set set a pixel probability
+// Set set a pixel normalized weight
 // for a given raster value.
-func (px Pixel) Set(v int, p float64) error {
-	if p < 0 || p > 1 {
-		return fmt.Errorf("invalid prior value %.6f", p)
+func (px Pixel) Set(v int, w float64) error {
+	if w < 0 || w > 1 {
+		return fmt.Errorf("invalid weight value %.6f", w)
 	}
-	px[v] = prob{
-		p:  p,
-		ln: math.Log(p),
+	px[v] = weight{
+		w:  w,
+		ln: math.Log(w),
 	}
 	return nil
 }
 
 // Values return the raster values
-// that have a defined prior.
+// that have a defined weights.
 func (px Pixel) Values() []int {
 	vs := make([]int, 0, len(px))
 	for v := range px {
@@ -91,21 +91,21 @@ func (px Pixel) Values() []int {
 	return vs
 }
 
-// TSV encodes a pixel prior as a TSV file.
+// TSV encodes pixel weights as a TSV file.
 func (px Pixel) TSV(w io.Writer) error {
 	for k, p := range px {
-		if p.p < 0 || p.p > 1 {
-			return fmt.Errorf("invalid pixel probability %.6f for pixel %d", p.p, k)
+		if p.w < 0 || p.w > 1 {
+			return fmt.Errorf("invalid pixel weight %.6f for pixel %d", p.w, k)
 		}
 	}
 
 	bw := bufio.NewWriter(w)
-	fmt.Fprintf(bw, "# pixel priors\n")
+	fmt.Fprintf(bw, "# normalized pixel weights\n")
 	fmt.Fprintf(bw, "# data save on: %s\n", time.Now().Format(time.RFC3339))
 	tab := csv.NewWriter(bw)
 	tab.Comma = '\t'
 	tab.UseCRLF = true
-	if err := tab.Write([]string{"key", "prior"}); err != nil {
+	if err := tab.Write([]string{"key", "weight"}); err != nil {
 		return fmt.Errorf("while writing header: %v", err)
 	}
 
@@ -113,7 +113,7 @@ func (px Pixel) TSV(w io.Writer) error {
 	for _, v := range vs {
 		row := []string{
 			strconv.Itoa(v),
-			strconv.FormatFloat(px[v].p, 'f', 6, 64),
+			strconv.FormatFloat(px[v].w, 'f', 6, 64),
 		}
 		if err := tab.Write(row); err != nil {
 			return fmt.Errorf("while writing data: %v", err)
@@ -130,20 +130,20 @@ func (px Pixel) TSV(w io.Writer) error {
 	return nil
 }
 
-// ReadTSV reads a TSV file used to define the prior probability values
+// ReadTSV reads a TSV file used to define the normalized weight values
 // for a given set of pixels values in a pixelation.
 //
-// The pixel prior file is a tab-delimited file
+// The pixel weight file is a tab-delimited file
 // with the following columns:
 //
 //	-key	the value used as identifier
-//	-prior	the prior probability for a pixel with that value
+//	-weight	the normalized weight for a pixel with that value
 //
 // Any other columns,
 // will be ignored.
-// Here is an example of a pixel prior file:
+// Here is an example of a pixel weight file:
 //
-//	key	prior	comment
+//	key	weight	comment
 //	0	0.000000	deep ocean
 //	1	0.010000	oceanic plateaus
 //	2	0.050000	continental shelf
@@ -164,7 +164,7 @@ func ReadTSV(r io.Reader) (Pixel, error) {
 		h = strings.ToLower(h)
 		fields[h] = i
 	}
-	for _, h := range []string{"key", "prior"} {
+	for _, h := range []string{"key", "weight"} {
 		if _, ok := fields[h]; !ok {
 			return nil, fmt.Errorf("expecting field %q", h)
 		}
@@ -187,18 +187,18 @@ func ReadTSV(r io.Reader) (Pixel, error) {
 			return nil, fmt.Errorf("on row %d: field %q: %v", ln, f, err)
 		}
 
-		f = "prior"
-		pp, err := strconv.ParseFloat(row[fields[f]], 64)
+		f = "weight"
+		w, err := strconv.ParseFloat(row[fields[f]], 64)
 		if err != nil {
 			return nil, fmt.Errorf("on row %d: field %q: %v", ln, f, err)
 		}
-		if pp < 0 || pp > 1 {
-			return nil, fmt.Errorf("on row %d: field %q: invalid prior value %.6f", ln, f, pp)
+		if w < 0 || w > 1 {
+			return nil, fmt.Errorf("on row %d: field %q: invalid weight value %.6f", ln, f, w)
 		}
 
-		p[k] = prob{
-			p:  pp,
-			ln: math.Log(pp),
+		p[k] = weight{
+			w:  w,
+			ln: math.Log(w),
 		}
 	}
 

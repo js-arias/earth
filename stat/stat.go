@@ -10,7 +10,7 @@ import (
 
 	"github.com/js-arias/earth"
 	"github.com/js-arias/earth/model"
-	"github.com/js-arias/earth/stat/pixprob"
+	"github.com/js-arias/earth/stat/weight"
 )
 
 // DistProber is an interface for a discrete spherical PDF
@@ -30,13 +30,13 @@ type pixDensity struct {
 
 // KDE implements a Kernel Density Estimation
 // using distribution d as the kernel,
-// a set of weighted points p
-// (a map of pixel IDs to weight*value of the pixel),
+// a set of scaled points p
+// (a map of pixel IDs to scale*value of the pixel),
 // a time pixelation
 // the age of the destination raster,
-// a set of pixel priors.
+// a set of pixel weights.
 // It return pixel values scaled to their CDF.
-func KDE(d DistProber, p map[int]float64, tp *model.TimePix, age int64, prior pixprob.Pixel) map[int]float64 {
+func KDE(d DistProber, p map[int]float64, tp *model.TimePix, age int64, weights weight.Pixel) map[int]float64 {
 	age = tp.ClosestStageAge(age)
 
 	// calculates the raw density of all pixels
@@ -44,10 +44,10 @@ func KDE(d DistProber, p map[int]float64, tp *model.TimePix, age int64, prior pi
 	raw := make([]pixDensity, 0, tp.Pixelation().Len())
 	for px := 0; px < tp.Pixelation().Len(); px++ {
 		v, _ := tp.At(age, px)
-		pp := 1.0
-		if prior != nil {
-			pp = prior.Prior(v)
-			if pp == 0 {
+		w := 1.0
+		if weights != nil {
+			w = weights.Weight(v)
+			if w == 0 {
 				continue
 			}
 		}
@@ -55,15 +55,15 @@ func KDE(d DistProber, p map[int]float64, tp *model.TimePix, age int64, prior pi
 		pt1 := tp.Pixelation().ID(px).Point()
 
 		var sum float64
-		for rp, w := range p {
+		for rp, sc := range p {
 			pt2 := tp.Pixelation().ID(rp).Point()
 			dist := earth.Distance(pt1, pt2)
-			sum += d.Prob(dist) * w
+			sum += d.Prob(dist) * sc
 		}
 		if sum == 0 {
 			continue
 		}
-		p := sum * pp
+		p := sum * w
 		raw = append(raw, pixDensity{
 			pix:  px,
 			prob: p,

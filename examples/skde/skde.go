@@ -17,7 +17,7 @@ import (
 	"github.com/js-arias/earth/model"
 	"github.com/js-arias/earth/stat"
 	"github.com/js-arias/earth/stat/dist"
-	"github.com/js-arias/earth/stat/pixprob"
+	"github.com/js-arias/earth/stat/weight"
 )
 
 const equatorPixels = 360
@@ -31,8 +31,8 @@ func main() {
 	for px := 0; px < pix.Len(); px++ {
 		tp.Set(0, px, 1)
 	}
-	pp := pixprob.New()
-	pp.Set(1, 1)
+	pw := weight.New()
+	pw.Set(1, 1)
 
 	n := dist.NewNormal(lambda, pix)
 	pt := pix.Pixel(-26.81, -65.22)
@@ -45,7 +45,7 @@ func main() {
 	}
 
 	nKDE := dist.NewNormal(kdeLambda, pix)
-	kde := stat.KDE(nKDE, pts, tp, 0, pp)
+	kde := stat.KDE(nKDE, pts, tp, 0, pw)
 
 	img := probImage{
 		step: 360.0 / numCols,
