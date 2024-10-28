@@ -22,9 +22,9 @@ import (
 
 	"gioui.org/app"
 	"gioui.org/f32"
+	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/io/pointer"
-	"gioui.org/io/system"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
@@ -162,10 +162,9 @@ func run(c *command.Command, args []string) error {
 	}
 
 	go func() {
-		w := app.NewWindow(
-			app.Title("Time Pixelation Viewer-Editor"),
-			app.Size(unit.Dp(720), unit.Dp(380)),
-		)
+		w := new(app.Window)
+		w.Option(app.Title("Time Pixelation Viewer-Editor"))
+		w.Option(app.Size(unit.Dp(720), unit.Dp(380)))
 		if sp.run(w); err != nil {
 			fmt.Fprintf(c.Stderr(), "%s: %v.\n", "timepix", err)
 			os.Exit(1)
@@ -181,16 +180,16 @@ func (sp *mapStagePix) run(w *app.Window) error {
 
 	var ops op.Ops
 	for {
-		e := <-w.Events()
+		e := w.Event()
 		switch e := e.(type) {
-		case system.FrameEvent:
-			gtx := layout.NewContext(&ops, e)
+		case app.FrameEvent:
+			gtx := app.NewContext(&ops, e)
 			sp.box = image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)
 			events(gtx, sp)
 			draw(gtx, th, sp)
 			registerEvents(gtx, sp)
 			e.Frame(gtx.Ops)
-		case system.DestroyEvent:
+		case app.DestroyEvent:
 			return e.Err
 		}
 	}
@@ -233,23 +232,54 @@ func draw(gtx layout.Context, th *material.Theme, sp *mapStagePix) {
 
 func registerEvents(gtx layout.Context, sp *mapStagePix) {
 	area := clip.Rect(image.Rect(0, 0, sp.box.X, sp.box.Y)).Push(gtx.Ops)
-
-	pointer.InputOp{
-		Tag:   sp,
-		Types: pointer.Move | pointer.Drag | pointer.Press,
-	}.Add(gtx.Ops)
-
-	key.InputOp{
-		Tag:  sp,
-		Keys: key.Set("+|-|M|N|P|S|W"),
-	}.Add(gtx.Ops)
-
+	event.Op(gtx.Ops, sp)
 	area.Pop()
 }
 
 func events(gtx layout.Context, sp *mapStagePix) {
-	for _, e := range gtx.Events(sp) {
-		switch e := e.(type) {
+	for {
+		event, ok := gtx.Event(
+			pointer.Filter{
+				Target: sp,
+				Kinds:  pointer.Move | pointer.Drag | pointer.Press,
+			},
+			key.FocusFilter{
+				Target: sp,
+			},
+			key.Filter{
+				Focus: sp,
+				Name:  "+",
+			},
+			key.Filter{
+				Focus: sp,
+				Name:  "-",
+			},
+			key.Filter{
+				Focus: sp,
+				Name:  "M",
+			},
+			key.Filter{
+				Focus: sp,
+				Name:  "N",
+			},
+			key.Filter{
+				Focus: sp,
+				Name:  "P",
+			},
+			key.Filter{
+				Focus: sp,
+				Name:  "S",
+			},
+			key.Filter{
+				Focus: sp,
+				Name:  "W",
+			},
+		)
+		if !ok {
+			break
+		}
+
+		switch e := event.(type) {
 		case key.Event:
 			if e.State != key.Press {
 				continue
@@ -313,7 +343,7 @@ func events(gtx layout.Context, sp *mapStagePix) {
 				}
 			}
 		case pointer.Event:
-			switch e.Type {
+			switch e.Kind {
 			case pointer.Drag:
 				sp.offset.X += e.Position.X - sp.pt.X
 				sp.offset.Y += e.Position.Y - sp.pt.Y
