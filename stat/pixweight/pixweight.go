@@ -2,9 +2,9 @@
 // All rights reserved.
 // Distributed under BSD2 license that can be found in the LICENSE file.
 
-// Package weight associates a pixelation raster value
+// Package pixweight associates a pixelation raster value
 // with a normalized weight (between 0 and 1) for a pixel.
-package weight
+package pixweight
 
 import (
 	"bufio"

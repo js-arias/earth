@@ -10,7 +10,7 @@ import (
 
 	"github.com/js-arias/earth"
 	"github.com/js-arias/earth/model"
-	"github.com/js-arias/earth/stat/weight"
+	"github.com/js-arias/earth/stat/pixweight"
 )
 
 // DistProber is an interface for a discrete spherical PDF
@@ -36,7 +36,7 @@ type pixDensity struct {
 // the age of the destination raster,
 // a set of pixel weights.
 // It return pixel values scaled to their CDF.
-func KDE(d DistProber, p map[int]float64, tp *model.TimePix, age int64, weights weight.Pixel) map[int]float64 {
+func KDE(d DistProber, p map[int]float64, tp *model.TimePix, age int64, weights pixweight.Pixel) map[int]float64 {
 	age = tp.ClosestStageAge(age)
 
 	// calculates the raw density of all pixels

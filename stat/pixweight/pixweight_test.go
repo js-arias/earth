@@ -2,7 +2,7 @@
 // All rights reserved.
 // Distributed under BSD2 license that can be found in the LICENSE file.
 
-package weight_test
+package pixweight_test
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/js-arias/earth/stat/weight"
+	"github.com/js-arias/earth/stat/pixweight"
 )
 
 func TestReadPixel(t *testing.T) {
@@ -35,7 +35,7 @@ key	weight	comment
 		5: 0.001,
 	}
 
-	p, err := weight.ReadTSV(strings.NewReader(data))
+	p, err := pixweight.ReadTSV(strings.NewReader(data))
 	if err != nil {
 		t.Fatalf("unable to read data: %v", err)
 	}
@@ -44,7 +44,7 @@ key	weight	comment
 }
 
 func TestSet(t *testing.T) {
-	p := weight.New()
+	p := pixweight.New()
 	p.Set(1, 0.01)
 	p.Set(2, 0.05)
 	p.Set(3, 1.00)
@@ -63,7 +63,7 @@ func TestSet(t *testing.T) {
 }
 
 func TestWrite(t *testing.T) {
-	p := weight.New()
+	p := pixweight.New()
 	p.Set(1, 0.01)
 	p.Set(2, 0.05)
 	p.Set(3, 1.00)
@@ -73,7 +73,7 @@ func TestWrite(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	got, err := weight.ReadTSV(&b)
+	got, err := pixweight.ReadTSV(&b)
 	if err != nil {
 		t.Fatalf("unable to read data: %v", err)
 	}
@@ -88,7 +88,7 @@ func TestWrite(t *testing.T) {
 	testWeights(t, got, want)
 }
 
-func testWeights(t testing.TB, p weight.Pixel, want map[int]float64) {
+func testWeights(t testing.TB, p pixweight.Pixel, want map[int]float64) {
 	t.Helper()
 
 	vs := make([]int, 0, len(want))

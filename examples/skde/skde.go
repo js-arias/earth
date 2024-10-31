@@ -17,7 +17,7 @@ import (
 	"github.com/js-arias/earth/model"
 	"github.com/js-arias/earth/stat"
 	"github.com/js-arias/earth/stat/dist"
-	"github.com/js-arias/earth/stat/weight"
+	"github.com/js-arias/earth/stat/pixweight"
 )
 
 const equatorPixels = 360
@@ -31,7 +31,7 @@ func main() {
 	for px := 0; px < pix.Len(); px++ {
 		tp.Set(0, px, 1)
 	}
-	pw := weight.New()
+	pw := pixweight.New()
 	pw.Set(1, 1)
 
 	n := dist.NewNormal(lambda, pix)
