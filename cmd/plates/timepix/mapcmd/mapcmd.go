@@ -7,21 +7,17 @@
 package mapcmd
 
 import (
-	"encoding/csv"
-	"errors"
 	"fmt"
 	"image"
 	"image/color"
 	"image/png"
-	"io"
 	"math/rand"
 	"os"
-	"strconv"
-	"strings"
 
 	"github.com/js-arias/blind"
 	"github.com/js-arias/command"
 	"github.com/js-arias/earth/model"
+	"github.com/js-arias/earth/pixkey"
 )
 
 var Command = &command.Command{
@@ -50,15 +46,13 @@ required columns:
 
 Any other column will be ignored. Here is an example of a key file:
 
-	key	color	gray	comment
+	key	color	gray	label
 	0	54, 75, 154	255	deep ocean
 	1	74, 123, 183	235	oceanic plateaus
 	2	152, 202, 225	225	continental shelf
 	3	254, 218, 139	195	lowlands
 	4	246, 126, 75	185	highlands
 	5	231, 231, 231	245	ice sheets
-
-In this case, gray a comment columns will be ignored.
 
 By default the image will be 3600 pixels wide, use the flag --columns, or -c,
 to define a different number of image columns.
@@ -108,7 +102,7 @@ func run(c *command.Command, args []string) error {
 		ages = tp.Stages()
 	}
 
-	var keys map[int]color.RGBA
+	var keys map[int]color.Color
 	if keyFlag != "" {
 		keys, err = readKey()
 		if err != nil {
@@ -141,90 +135,25 @@ func readTimePix(name string) (*model.TimePix, error) {
 	return tp, nil
 }
 
-func readKey() (map[int]color.RGBA, error) {
-	f, err := os.Open(keyFlag)
+func readKey() (map[int]color.Color, error) {
+	pk, err := pixkey.Read(keyFlag)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
 
-	r := csv.NewReader(f)
-	r.Comma = '\t'
-	r.Comment = '#'
-
-	head, err := r.Read()
-	if err != nil {
-		return nil, fmt.Errorf("while reading file %q: while reading header: %v", keyFlag, err)
-	}
-	fields := make(map[string]int, len(head))
-	for i, h := range head {
-		h = strings.ToLower(h)
-		fields[h] = i
-	}
-	for _, h := range []string{"key", "color"} {
-		if _, ok := fields[h]; !ok {
-			return nil, fmt.Errorf("while reading file %q: expecting field %q", keyFlag, h)
+	keys := make(map[int]color.Color)
+	for _, k := range pk.Keys() {
+		c, ok := pk.Color(k)
+		if !ok {
+			c = randColor()
 		}
-	}
-
-	keys := make(map[int]color.RGBA)
-	for {
-		row, err := r.Read()
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		ln, _ := r.FieldPos(0)
-		if err != nil {
-			return nil, fmt.Errorf("while reading file %q: on row %d: %v", keyFlag, ln, err)
-		}
-
-		f := "key"
-		k, err := strconv.Atoi(row[fields[f]])
-		if err != nil {
-			return nil, fmt.Errorf("while reading file %q: on row %d: %v", keyFlag, ln, err)
-		}
-
-		f = "color"
-		vals := strings.Split(row[fields[f]], ",")
-		if len(vals) != 3 {
-			return nil, fmt.Errorf("while reading file %q: on row %d: field %q: found %d values", keyFlag, ln, f, len(vals))
-		}
-
-		red, err := strconv.Atoi(strings.TrimSpace(vals[0]))
-		if err != nil {
-			return nil, fmt.Errorf("while reading file %q: on row %d: field %q [red value]: %v", keyFlag, ln, f, err)
-		}
-		if red > 255 {
-			return nil, fmt.Errorf("while reading file %q: on row %d: field %q [red value]: invalid value %d", keyFlag, ln, f, red)
-		}
-
-		green, err := strconv.Atoi(strings.TrimSpace(vals[1]))
-		if err != nil {
-			return nil, fmt.Errorf("while reading file %q: on row %d: field %q [green value]: %v", keyFlag, ln, f, err)
-		}
-		if green > 255 {
-			return nil, fmt.Errorf("while reading file %q: on row %d: field %q [green value]: invalid value %d", keyFlag, ln, f, green)
-		}
-
-		blue, err := strconv.Atoi(strings.TrimSpace(vals[2]))
-		if err != nil {
-			return nil, fmt.Errorf("while reading file %q: on row %d: field %q [blue value]: %v", keyFlag, ln, f, err)
-		}
-		if blue > 255 {
-			return nil, fmt.Errorf("while reading file %q: on row %d: field %q [blue value]: invalid value %d", keyFlag, ln, f, blue)
-		}
-
-		c := color.RGBA{uint8(red), uint8(green), uint8(blue), 255}
 		keys[k] = c
-	}
-	if len(keys) == 0 {
-		return nil, fmt.Errorf("while reading file %q: %v", keyFlag, io.EOF)
 	}
 	return keys, nil
 }
 
-func makeKeyPalette(tp *model.TimePix, ages []int64) map[int]color.RGBA {
-	keys := make(map[int]color.RGBA)
+func makeKeyPalette(tp *model.TimePix, ages []int64) map[int]color.Color {
+	keys := make(map[int]color.Color)
 	for _, a := range ages {
 		for px := 0; px < tp.Pixelation().Len(); px++ {
 			v, _ := tp.At(a, px)
@@ -245,7 +174,7 @@ func randColor() color.RGBA {
 type stagePix struct {
 	step float64
 	age  int64
-	keys map[int]color.RGBA
+	keys map[int]color.Color
 	tp   *model.TimePix
 }
 
@@ -264,7 +193,7 @@ func (s stagePix) At(x, y int) color.Color {
 	return c
 }
 
-func makeStage(tp *model.TimePix, age int64, keys map[int]color.RGBA) stagePix {
+func makeStage(tp *model.TimePix, age int64, keys map[int]color.Color) stagePix {
 	return stagePix{
 		step: 360 / float64(colsFlag),
 		age:  age,
