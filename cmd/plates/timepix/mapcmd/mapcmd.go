@@ -102,7 +102,7 @@ func run(c *command.Command, args []string) error {
 		ages = tp.Stages()
 	}
 
-	var keys map[int]color.Color
+	var keys *pixkey.PixKey
 	if keyFlag != "" {
 		keys, err = readKey()
 		if err != nil {
@@ -135,32 +135,28 @@ func readTimePix(name string) (*model.TimePix, error) {
 	return tp, nil
 }
 
-func readKey() (map[int]color.Color, error) {
-	pk, err := pixkey.Read(keyFlag)
+func readKey() (*pixkey.PixKey, error) {
+	f, err := os.Open(keyFlag)
 	if err != nil {
 		return nil, err
 	}
-
-	keys := make(map[int]color.Color)
-	for _, k := range pk.Keys() {
-		c, ok := pk.Color(k)
-		if !ok {
-			c = randColor()
-		}
-		keys[k] = c
+	defer f.Close()
+	pk, err := pixkey.Read(f)
+	if err != nil {
+		return nil, fmt.Errorf("on file %q: %v", keyFlag, err)
 	}
-	return keys, nil
+	return pk, nil
 }
 
-func makeKeyPalette(tp *model.TimePix, ages []int64) map[int]color.Color {
-	keys := make(map[int]color.Color)
+func makeKeyPalette(tp *model.TimePix, ages []int64) *pixkey.PixKey {
+	keys := pixkey.New()
 	for _, a := range ages {
 		for px := 0; px < tp.Pixelation().Len(); px++ {
 			v, _ := tp.At(a, px)
-			if _, ok := keys[v]; ok {
+			if _, ok := keys.Color(v); ok {
 				continue
 			}
-			keys[v] = randColor()
+			keys.SetColor(randColor(), v)
 		}
 	}
 	return keys
@@ -174,7 +170,7 @@ func randColor() color.RGBA {
 type stagePix struct {
 	step float64
 	age  int64
-	keys map[int]color.Color
+	keys *pixkey.PixKey
 	tp   *model.TimePix
 }
 
@@ -186,14 +182,14 @@ func (s stagePix) At(x, y int) color.Color {
 
 	pix := s.tp.Pixelation().Pixel(lat, lon).ID()
 	v, _ := s.tp.At(s.age, pix)
-	c, ok := s.keys[v]
+	c, ok := s.keys.Color(v)
 	if !ok {
 		return color.RGBA{0, 0, 0, 0}
 	}
 	return c
 }
 
-func makeStage(tp *model.TimePix, age int64, keys map[int]color.Color) stagePix {
+func makeStage(tp *model.TimePix, age int64, keys *pixkey.PixKey) stagePix {
 	return stagePix{
 		step: 360 / float64(colsFlag),
 		age:  age,

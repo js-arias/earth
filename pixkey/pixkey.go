@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"image/color"
 	"io"
-	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -27,6 +26,16 @@ type PixKey struct {
 
 	color map[int]color.Color
 	gray  map[int]uint8
+}
+
+// New creates a new empty key.
+func New() *PixKey {
+	return &PixKey{
+		values: make(map[string]int),
+		labels: make(map[int]string),
+		color:  make(map[int]color.Color),
+		gray:   make(map[int]uint8),
+	}
 }
 
 // Color returns the color associated with a given value.
@@ -83,10 +92,13 @@ func (pk *PixKey) Gray(v int) (color.Color, bool) {
 
 // SetColor sets a color to be associated with a given value.
 func (pk *PixKey) SetColor(c color.Color, v int) {
-	if pk.color == nil {
-		pk.color = make(map[int]color.Color)
-	}
 	pk.color[v] = c
+}
+
+// SetGray sets the gray color to be associated with a given value.
+func (pk *PixKey) SetGray(c color.Color, v int) {
+	r, _, _, _ := c.RGBA()
+	pk.gray[v] = uint8(r >> 8)
 }
 
 // SetLabel sets the label of a given ket value.
@@ -138,20 +150,14 @@ func (pk *PixKey) SetLabel(v int, label string) error {
 //	3	lowlands	251, 236, 93	90
 //	4	highlands	255, 165, 0	100
 //	5	ice sheets	229, 229, 224	50
-func Read(name string) (*PixKey, error) {
-	f, err := os.Open(name)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
+func Read(r io.Reader) (*PixKey, error) {
+	tab := csv.NewReader(r)
+	tab.Comma = '\t'
+	tab.Comment = '#'
 
-	r := csv.NewReader(f)
-	r.Comma = '\t'
-	r.Comment = '#'
-
-	head, err := r.Read()
+	head, err := tab.Read()
 	if err != nil {
-		return nil, fmt.Errorf("on file %q: while reading header: %v", name, err)
+		return nil, fmt.Errorf("while reading header: %v", err)
 	}
 	fields := make(map[string]int, len(head))
 	for i, h := range head {
@@ -160,7 +166,7 @@ func Read(name string) (*PixKey, error) {
 	}
 	for _, h := range []string{"key", "color"} {
 		if _, ok := fields[h]; !ok {
-			return nil, fmt.Errorf("when reading file %q: expecting field %q", name, h)
+			return nil, fmt.Errorf("expecting field %q", h)
 		}
 	}
 
@@ -172,50 +178,50 @@ func Read(name string) (*PixKey, error) {
 	}
 
 	for {
-		row, err := r.Read()
+		row, err := tab.Read()
 		if errors.Is(err, io.EOF) {
 			break
 		}
-		ln, _ := r.FieldPos(0)
+		ln, _ := tab.FieldPos(0)
 		if err != nil {
-			return nil, fmt.Errorf("when reading file %q: on row %d: %v", name, ln, err)
+			return nil, fmt.Errorf("on row %d: %v", ln, err)
 		}
 
 		f := "key"
 		k, err := strconv.Atoi(row[fields[f]])
 		if err != nil {
-			return nil, fmt.Errorf("when reading file %q: on row %d: field %q: %v", name, ln, f, err)
+			return nil, fmt.Errorf("on row %d: field %q: %v", ln, f, err)
 		}
 		if _, ok := pk.color[k]; ok {
-			return nil, fmt.Errorf("when reading file %q: on row %d: field %q: key '%d' already used", name, ln, f, k)
+			return nil, fmt.Errorf("on row %d: field %q: key '%d' already used", ln, f, k)
 		}
 
 		f = "color"
 		val := strings.Split(row[fields[f]], ",")
 		if len(val) != 3 {
-			return nil, fmt.Errorf("when reading file %q: on row %d: field %q: found %d values, want 3", name, ln, f, len(val))
+			return nil, fmt.Errorf("on row %d: field %q: found %d values, want 3", ln, f, len(val))
 		}
 
 		red, err := strconv.Atoi(strings.TrimSpace(val[0]))
 		if err != nil {
-			return nil, fmt.Errorf("when reading file %q: on row %d: field %q [red value]: %v", name, ln, f, err)
+			return nil, fmt.Errorf("on row %d: field %q [red value]: %v", ln, f, err)
 		}
 		if red > 255 {
-			return nil, fmt.Errorf("when reading file %q: on row %d: field %q [red value]: invalid value %d", name, ln, f, red)
+			return nil, fmt.Errorf("on row %d: field %q [red value]: invalid value %d", ln, f, red)
 		}
 		green, err := strconv.Atoi(strings.TrimSpace(val[1]))
 		if err != nil {
-			return nil, fmt.Errorf("when reading file %q: on row %d: field %q [green value]: %v", name, ln, f, err)
+			return nil, fmt.Errorf("on row %d: field %q [green value]: %v", ln, f, err)
 		}
 		if green > 255 {
-			return nil, fmt.Errorf("when reading file %q: on row %d: field %q [green value]: invalid value %d", name, ln, f, green)
+			return nil, fmt.Errorf("on row %d: field %q [green value]: invalid value %d", ln, f, green)
 		}
 		blue, err := strconv.Atoi(strings.TrimSpace(val[2]))
 		if err != nil {
-			return nil, fmt.Errorf("when reading file %q: on row %d: field %q [blue value]: %v", name, ln, f, err)
+			return nil, fmt.Errorf("on row %d: field %q [blue value]: %v", ln, f, err)
 		}
 		if blue > 255 {
-			return nil, fmt.Errorf("when reading file %q: on row %d: field %q [blue value]: invalid value %d", name, ln, f, blue)
+			return nil, fmt.Errorf("on row %d: field %q [blue value]: invalid value %d", ln, f, blue)
 		}
 
 		c := color.RGBA{uint8(red), uint8(green), uint8(blue), 255}
@@ -230,7 +236,7 @@ func Read(name string) (*PixKey, error) {
 			}
 		}
 		if v, ok := pk.values[label]; ok {
-			return nil, fmt.Errorf("when reading file %q: on row %d: field %q: label %q already used (by key %d)", name, ln, f, label, v)
+			return nil, fmt.Errorf("on row %d: field %q: label %q already used (by key %d)", ln, f, label, v)
 		}
 		pk.values[label] = k
 		pk.labels[k] = label
@@ -241,13 +247,78 @@ func Read(name string) (*PixKey, error) {
 		}
 		gray, err := strconv.Atoi(row[fields[f]])
 		if err != nil {
-			return nil, fmt.Errorf("when reading file %q: on row %d: field %q: %v", name, ln, f, err)
+			return nil, fmt.Errorf(" on row %d: field %q: %v", ln, f, err)
 		}
 		if gray > 255 {
-			return nil, fmt.Errorf("when reading file %q: on row %d: field %q: invalid value %d", name, ln, f, gray)
+			return nil, fmt.Errorf(" on row %d: field %q: invalid value %d", ln, f, gray)
 		}
 
 		pk.gray[k] = uint8(gray)
 	}
 	return pk, nil
+}
+
+// TSV writes a file with the keys for the pixel colors and labels
+// in a time pixelation.
+func (pk *PixKey) TSV(w io.Writer) error {
+	if len(pk.labels) == 0 {
+		for v := range pk.color {
+			pk.labels[v] = strconv.Itoa(v)
+		}
+	}
+
+	tab := csv.NewWriter(w)
+	tab.Comma = '\t'
+	tab.UseCRLF = true
+
+	head := []string{
+		"key",
+		"label",
+		"color",
+	}
+	if len(pk.gray) > 0 {
+		head = append(head, "gray")
+	}
+	if err := tab.Write(head); err != nil {
+		return err
+	}
+
+	pv := make([]int, 0, len(pk.color))
+	for v := range pk.color {
+		pv = append(pv, v)
+	}
+	slices.Sort(pv)
+
+	for _, v := range pv {
+		c, ok := pk.color[v]
+		if !ok {
+			continue
+		}
+		r, g, b, _ := c.RGBA()
+		cc := fmt.Sprintf("%d, %d, %d", uint8(r), uint8(g), uint8(b))
+
+		row := []string{
+			strconv.Itoa(v),
+			pk.labels[v],
+			cc,
+		}
+
+		if len(pk.gray) > 0 {
+			c, ok := pk.gray[v]
+			if !ok {
+				continue
+			}
+			row = append(row, strconv.Itoa(int(c)))
+		}
+
+		if err := tab.Write(row); err != nil {
+			return err
+		}
+	}
+
+	tab.Flush()
+	if err := tab.Error(); err != nil {
+		return err
+	}
+	return nil
 }

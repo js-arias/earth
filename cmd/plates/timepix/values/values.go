@@ -111,9 +111,16 @@ func readKey() (map[int]string, error) {
 	if keyFlag == "" {
 		return labels, nil
 	}
-	pk, err := pixkey.Read(keyFlag)
+
+	f, err := os.Open(keyFlag)
 	if err != nil {
 		return nil, err
+	}
+	defer f.Close()
+
+	pk, err := pixkey.Read(f)
+	if err != nil {
+		return nil, fmt.Errorf("when reading file %q: %v", keyFlag, err)
 	}
 
 	for _, k := range pk.Keys() {
